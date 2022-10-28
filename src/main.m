@@ -1,4 +1,13 @@
-%% INITIAL MODEL SETUP
+%% CHIXCULUB: IMPACT HYDROTHERMAL CIRCULATION MODEL
+
+fprintf('\n\n')
+fprintf('*************************************************************\n');
+fprintf('*****  RUN CHIXCULUB MODEL | %s  **********\n',datetime('now'));
+fprintf('*************************************************************\n');
+fprintf('\n   run ID: %s \n\n',runID);
+
+
+%% MODEL SETUP & INITIAL CONDITIONS
 
 % initialise grid coordinates
 h = D./N;     % grid spacing
@@ -14,7 +23,7 @@ for i=1:smth
                        + diff(rn(:,2:end-1),2,1)./8 ...
                        + diff(rn(2:end-1,:),2,2)./8;
     rn([1 end],:) = rn([2 end-1],:);
-    rn(:,[1 end]) = rn(:,[2 end-1]);
+    rn(:,[1 end]) = rn(:,[end-1 2]);
 end
 rn = rn./max(abs(rn(:)));
 
@@ -53,7 +62,7 @@ for i=1:smth/2
                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
                             + diff(indstruct(2:end-1,:,:),2,2)./8;
     indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
-    indstruct(:,[1 end],:) = indstruct(:,[2 end-1],:);
+    indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
 end
 
 % update initial condition within structures
@@ -72,20 +81,28 @@ C = C + dC.*rn;
 f = max(1e-3,min(1-1e-3,f));
 
 %
-T = T + (Ttop-T).*exp(-max(0,Z)./h);
-C = C + (Ctop-C).*exp(-max(0,Z)./h);
+T = T + (Ttop-T).*exp(-max(0,Z)/2/h);
+C = C + (Ctop-C).*exp(-max(0,Z)/2/h);
 
 % store initial fields
 fin = f;
 Tin = T;
 Cin = C;
 
-% initialise timing parameters
-DTDt = 0.*T(2:end-1,2:end-1);
-DCDt = 0.*C(2:end-1,2:end-1);
-dt   = 0;
-m    = 0;
-time = 0;
+% get density difference
+Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
+Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+
+% get permeability [m2]
+k = a^2/b * f.^n;  % Kozeny-Carman relationship
+
+% get Darcy coefficient [m2/Pas]
+K  = k/mu;
+Kz = (K(1:end-1,:)+K(2:end,:))./2;
+Kx = (K(:,1:end-1)+K(:,2:end))./2;
+
+% get iterative step size
+dtau = (h/2)^2./K;
 
 % prepare for plotting
 load ocean
@@ -125,40 +142,84 @@ drawnow
 w = zeros(N+1,N+2);  % vertical Darcy speed
 u = zeros(N+2,N+1);  % horizontal Darcy speed
 p = zeros(N+2,N+2);  % pore fluid pressure
-F = zeros(N+2,N+2);  % residual for pressure equation
+F = ones(N+2,N+2)./dtau;  % residual for pressure equation
+F([1,end],:) = 0;  F(:,[1,end]) = 0;
 
 
-%% MAIN TIME STEPPING LOOP
+%% TIME STEPPING LOOP
+
+% initialise timing parameters
+DTDt = 0.*T(2:end-1,2:end-1);
+DCDt = 0.*C(2:end-1,2:end-1);
+dt   = 0;
+step = 0;
+time = 0;
 
 while time <= tend
 
-    fprintf(1,'\n\n*****  step = %d,  time = %1.3e [yr],  step = %1.3e [hr] \n\n',m,time/3600/24/365.25,dt/3600);
+    fprintf(1,'\n\n*****  step = %d,  time = %1.3e [yr],  step = %1.3e [hr] \n\n',step,time/3600/24/365.25,dt/3600);
 
     % store previous rates of change
     To    = T;
     Co    = C;
     DTDto = DTDt;
     DCDto = DCDt;
-    
-    % calculate permeability [m2]
-    k = a^2/b * f.^n;  % Kozeny-Carman relationship
-    
-    % calculate Darcy coefficient [m2/Pas] AKA Mobility-Not hydraullic
-    % conductivity which is flux/section area
-    K = k/mu;
-    
-    % calculate iterative step size
-    dtau = (h/2)^2./K;
-        
-    % update density difference
-    Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
-    
-    % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
+
+
     Fnorm = 1e6;
     pi    = p;
     it    = 0;
+
+
+    %% NONLINEAR SOLVER LOOP
+
     while Fnorm >= tol && it <= maxit || it <= 100 
         
+        if ~mod(it,nup)
+
+            % UPDATE TEMPERATURE SOLUTION (SEMI-IMPLICIT UPDATE)
+            
+            advn_T = - advect(T(2:end-1,2:end-1),u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_T);
+
+            diff_T = kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
+
+            DTDt = advn_T + diff_T;
+
+            T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (DTDt + DTDto)/2 .* dt;
+                        
+            % apply temperature boundary conditions
+            T(:,1  ) = T(:,end-1);  % left boundary: insulating
+            T(:,end) = T(:,2    );  % right boundary: insulating
+            T(1  ,:) = Ttop;        % top boundary: isothermal
+            T(end,:) = Tbot;        % bottom boundary: constant flux
+            
+
+            % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
+            
+            % calculate concentration advection
+            advn_C = - advect(C(2:end-1,2:end-1),u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
+
+            diff_C = kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
+
+            DCDt = advn_C + diff_C;
+            
+            C(2:end-1,2:end-1) = Co(2:end-1,2:end-1) + (DCDt + DCDto)/2 .* dt;
+            
+            C = max(0,min(1,C));  % saveguard min/max bounds
+
+            % apply concentration boundary conditions
+            C(:,1  ) = C(:,end-1);  % left boundary: closed
+            C(:,end) = C(:,2    );  % right boundary: closed
+            C(1  ,:) = Ctop;        % top boundary: isochemical
+            C(end,:) = Cbot;        % bottom boundary: isochemical
+            
+            % update density difference
+            Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
+            Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+        end
+
+        % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
+
         % store previous iterative solution guesses
         pii = pi; pi = p;
         
@@ -167,8 +228,8 @@ while time <= tend
         gradPx = diff(p,1,2)./h;  % horizontal gradient
         
         % calculate Darcy segregation speed [m/s]
-        w = -(K(1:end-1,:)+K(2:end,:))./2 .* (gradPz + (Drho(1:end-1,:)+Drho(2:end,:))./2.*grav);
-        u = -(K(:,1:end-1)+K(:,2:end))./2 .* (gradPx + 0                                       );
+        w = - Kz .* (gradPz + Drhoz.*grav);
+        u = - Kx .* (gradPx + 0          );
         
         % calculate residual of pressure equation
         F(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
@@ -177,87 +238,26 @@ while time <= tend
         p = pi - alpha.*F.*dtau + beta.*(pi-pii);
         
         % apply pressure boundary conditions
-        p(:,1  ) = p(:,2    );
-        p(:,end) = p(:,end-1);
-        p(1  ,:) = p(2    ,:) + (Drho(1  ,:)+Drho(2    ,:))./2.*grav.*h;
-        p(end,:) = p(end-1,:) - (Drho(end,:)+Drho(end-1,:))./2.*grav.*h;
-        
-        % get preconditioned residual norm to monitor convergence
-        Fnorm = norm(F(:).*dtau(:),2)./norm(p(:),2);
-        
-        % print convergence
-        if ~mod(it,100)
-            
-            % UPDATE TEMPERATURE SOLUTION (SEMI-EXPLICIT SOLVER?)
-            dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);  % timestep limiter
-            
-            % calculate temperature advection
-            wp = max(0, (w(1:end-1,2:end-1)+w(2:end,2:end-1))./2);
-            wm = min(0, (w(1:end-1,2:end-1)+w(2:end,2:end-1))./2);
-            up = max(0, (u(2:end-1,1:end-1)+u(2:end-1,2:end))./2);
-            um = min(0, (u(2:end-1,1:end-1)+u(2:end-1,2:end))./2);
-            
-            Tgh                    = zeros(size(T)+2);
-            Tgh(2:end-1,2:end-1)   = T;
-            Tgh([1 end],:) = Tgh([2 end-1],:);
-            Tgh(:,[1 end]) = Tgh(:,[2 end-1]);
-            
-            Tcc = Tgh(3:end-2,3:end-2);
-            Tjp = Tgh(4:end-1,3:end-2);  Tjpp = Tgh(5:end-0,3:end-2);
-            Tjm = Tgh(2:end-3,3:end-2);  Tjmm = Tgh(1:end-4,3:end-2);
-            Tip = Tgh(3:end-2,4:end-1);  Tipp = Tgh(3:end-2,5:end-0);
-            Tim = Tgh(3:end-2,2:end-3);  Timm = Tgh(3:end-2,1:end-4);
-            
-            grdTxp = (-3*Tcc+4*Tip-Tipp)/2/h;
-            grdTxm = ( 3*Tcc-4*Tim+Timm)/2/h;
-            grdTzp = (-3*Tcc+4*Tjp-Tjpp)/2/h;
-            grdTzm = ( 3*Tcc-4*Tjm+Tjmm)/2/h;
-            
-            DTDt = - (wp.*grdTzm + wm.*grdTzp + up.*grdTxm + um.*grdTxp) ...
-                 + kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
-            
-            T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (DTDt + DTDto)/2 .* dt;
-            
-            T = max(min([T0,T1,Tstruct,Ttop,Tbot]),min(max([T0,T1,Tstruct,Ttop,Tbot]),T));  % saveguard min/max bounds
-            
-            % apply temperature boundary conditions
-            T(:,1  ) = T(:,2    );  % left boundary: insulating
-            T(:,end) = T(:,end-1);  % right boundary: insulating
-            T(1  ,:) = Ttop;        % top boundary: isothermal
-            T(end,:) = Tbot;        % bottom boundary: constant flux
-            
-            % UPDATE CONCENTRATION SOLUTION (EXPLICIT SOLVER)
-            
-            % calculate concentration advection
-            Cgh                    = zeros(size(C)+2);
-            Cgh(2:end-1,2:end-1)   = C;
-            Cgh([1 end],:) = Cgh([2 end-1],:);
-            Cgh(:,[1 end]) = Cgh(:,[2 end-1]);
-            
-            Ccc = Cgh(3:end-2,3:end-2);
-            Cjp = Cgh(4:end-1,3:end-2);  Cjpp = Cgh(5:end-0,3:end-2);
-            Cjm = Cgh(2:end-3,3:end-2);  Cjmm = Cgh(1:end-4,3:end-2);
-            Cip = Cgh(3:end-2,4:end-1);  Cipp = Cgh(3:end-2,5:end-0);
-            Cim = Cgh(3:end-2,2:end-3);  Cimm = Cgh(3:end-2,1:end-4);
-            
-            grdCxp = (-3*Ccc+4*Cip-Cipp)/2/h;
-            grdCxm = ( 3*Ccc-4*Cim+Cimm)/2/h;
-            grdCzp = (-3*Ccc+4*Cjp-Cjpp)/2/h;
-            grdCzm = ( 3*Ccc-4*Cjm+Cjmm)/2/h;
-            
-            DCDt = - (wp.*grdCzm + wm.*grdCzp + up.*grdCxm + um.*grdCxp) ...
-                 + kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
-            
-            C(2:end-1,2:end-1) = Co(2:end-1,2:end-1) + (DCDt + DCDto)/2 .* dt;
-            
-            C = max(min([C0,C1,Cstruct,Ctop,Cbot]),min(max([C0,C1,Cstruct,Ctop,Cbot]),C));  % saveguard min/max bounds
+        if strcmp(BC_VP{1},'closed')
+            p([1 end],:) = p([2 end-1],:) + [1;-1].*(Drho([1 end],:)+Drho([2 end-1],:))./2.*grav.*h;
+        else        
+            p([1 end],:) = 0;
+        end
+        if strcmp(BC_VP{2},'closed')
+            p(:,[1 end]) = p(:,[2 end-1]);
+        elseif strcmp(BC_VP{2},'periodic')
+            p(:,[1 end]) = p(:,[end-1 2]);
+        else
+            p(:,[1 end]) = 0;
+        end
 
-            % apply concentration boundary conditions
-            C(:,1  ) = C(:,2    );  % left boundary: closed
-            C(:,end) = C(:,end-1);  % right boundary: closed
-            C(1  ,:) = Ctop;        % top boundary: isochemical
-            C(end,:) = Cbot;        % bottom boundary: isochemical
-            
+        % get physical time step
+        dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
+
+        if ~mod(it,nup)
+            % get preconditioned residual norm to monitor convergence
+            Fnorm = norm(F(2:end-1,2:end-1).*dtau(2:end-1,2:end-1),2)./norm(p(2:end-1,2:end-1)+1,2);
+
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,Fnorm);
         end
@@ -267,7 +267,7 @@ while time <= tend
     end
 
     % plot solution
-    if ~mod(m,nop)
+    if ~mod(step,nop)
         if lvplt
             fh2 = figure(2); clf; 
         else
@@ -323,13 +323,13 @@ while time <= tend
                             
         % print figure to file
         if svfig
-            print(fh2,['../out/',runID,'/',runID,'_',int2str(m/nop)],'-dpng','-r200')
+            print(fh2,['../out/',runID,'/',runID,'_',int2str(step/nop)],'-dpng','-r200')
         end
         clear fh1 fh2
     end
     
     % update time and step count
-    m    = m + 1;
+    step = step + 1;
     time = time + dt;  
 
 end 
