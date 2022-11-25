@@ -4,31 +4,31 @@ clear; close all; clc;
 %% SET MODEL PARAMETERS
 
 runID   = 'impact'; % run identifier tag
-nop     = 50;       % print output every 'nop' steps
+outdir  = '../out'; % output directory 
+nout    = 50;       % print output every 'nop' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
-svfig   = 1;        % save figures to file (1)
+svout   = 1;        % save figures and data to file (1)
 
 % set domain parameters
 N       = 200;      % num. grid size
 D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
-mu      = 1e-3;     % pore fluid viscosity (water) [Pa s]
-a       = 1e-3;     % grain size of matrix (sandstone) [m]
-b       = 500;      % geom. factor for permeability [1]
+mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
+k0      = 1e-11;    % background permeability [m2]
 n       = 3;        % permeability powerlaw [1]
 rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
 kT      = 1e-6;     % thermal diffusivity [m2/s]
 aT      = 1e-4;     % thermal expansivity [1/K]
-gC      = 1;        % chemical expansivity [1/wt]
+gC      = 1.1;      % chemical expansivity [1/wt]
 
 % set initial condition parameters
 finit   = 'linear'; % initial condition: 'linear' or 'layer'
-f0      = 0.15;     % top/background initial porosity [vol]
-f1      = 0.01;     % base porosity [vol]  
-df      = 0.002;    % perturbation amplitude [vol]
+f0      = 0.20;     % top/background initial porosity [vol]
+f1      = 0.005;    % base porosity [vol]  
+df      = 0.001;    % perturbation amplitude [vol]
 
 Tinit   = 'linear'; % initial condition: 'linear' or 'layer'
 Ttop    = 10;       % top boundary temperature
@@ -47,14 +47,14 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
 
-xstruct = [D/2];    % position of structures
-zstruct = [0];      % onset depth of structures
-dstruct = [500];    % final depth of structures
-wstruct = [500];    % thickness of structures
-astruct = [90];     % angle of structures to vertical
-fstruct = [0.20];   % porosity of structures (nan = do not set)
-Tstruct = [400];    % temperature of structures (nan = do not set)
-Cstruct = [0.01];   % salinity of structures (nan = do not set)
+xstruct = [D/2,D/5,4*D/5,D/2];    % midpoint x-position of structures
+zstruct = [250,150,150,350];      % midpoint z-position of structures
+hstruct = [500,400,400,80];      % height of structures
+wstruct = [D,D/20,D/20,800];      % width of structures
+astruct = [0,30,-30,0];       % angle of structures to horizontal (counter-clockwise)
+fstruct = [0.20,0.25,0.25,0.005];   % porosity of structures (nan = do not set)
+Tstruct = [400,500,500,800];      % temperature of structures (nan = do not set)
+Cstruct = [0.01,0.01,0.01,0.1];   % salinity of structures (nan = do not set)
 
 smth    = 5*(N/100)^2; % smoothness of initial fields
 
@@ -73,13 +73,8 @@ nup     = 200;       % update TC-solution and check residuals every nup iter
 tol     = 1e-8;      % residual tolerance for iterative solver
 maxit   = 1e4;       % maximum number of iterations
 alpha   = 0.99;      % step size for iterative solver
-beta    = 0.98;      % damping parameter for iterative solver
+beta    = 0.97;      % damping parameter for iterative solver
 
-% create output directory
-if ~isfolder(['../out/',runID])
-    mkdir(['../out/',runID]);
-end
-
-% run code
-addpath ../src
-main
+%*****  RUN NAKHLA MODEL  *************************************************
+run('../src/main')
+%**************************************************************************

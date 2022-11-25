@@ -6,6 +6,15 @@ fprintf('*****  RUN CHIXCULUB MODEL | %s  **********\n',datetime('now'));
 fprintf('*************************************************************\n');
 fprintf('\n   run ID: %s \n\n',runID);
 
+% create output directory
+if ~isfolder([outdir,'/',runID])
+    mkdir([outdir,'/',runID]);
+end
+
+% save input parameters & options
+parfile = [outdir,'/',runID,'/',runID,'_par'];
+save(parfile);
+
 
 %% MODEL SETUP & INITIAL CONDITIONS
 
@@ -40,7 +49,7 @@ switch Tinit  % initial temperature
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
-switch Cinit  % initial concentration
+switch Cinit  % initial salinity
     case 'linear'
         C = C0 + (C1-C0) .* Z/D;
     case 'layer'
@@ -51,9 +60,14 @@ end
 % get indicator functions
 indstruct = zeros([size(f),length(zstruct)]);
 for i = 1:length(zstruct)
-    indstruct(:,:,i) = Z >= zstruct(i) & Z <= dstruct(i) ...
-        & abs((X-xstruct(i))+ tand(astruct(i))*(D-Z)...
-        - 0.5*(D-zstruct(i))) <= (0.5*wstruct(i)/cosd(astruct(i)));
+    indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
+    indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
+    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round(D/2-zstruct(i))/D*N,1);
+    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round(D/2-xstruct(i))/D*N,2);
+    indstruct(z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
+    indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,i) = 0;
+    indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
+    indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
 end
 
 % Smoothing function applied to structure indicator to minimise sharp interfaces
@@ -81,8 +95,8 @@ C = C + dC.*rn;
 f = max(1e-3,min(1-1e-3,f));
 
 %
-T = T + (Ttop-T).*exp(-max(0,Z)/2/h);
-C = C + (Ctop-C).*exp(-max(0,Z)/2/h);
+T = T + (Ttop-T).*exp(-max(0,Z)/h);
+C = C + (Ctop-C).*exp(-max(0,Z)/h);
 
 % store initial fields
 fin = f;
@@ -94,7 +108,7 @@ Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
 Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 
 % get permeability [m2]
-k = a^2/b * f.^n;  % Kozeny-Carman relationship
+k = k0 * f.^n;  % Kozeny-Carman relationship
 
 % get Darcy coefficient [m2/Pas]
 K  = k/mu;
@@ -117,25 +131,29 @@ axl = 1.75; axr = 0.90; %   Right and left; spacing of axis to page
 
 % prepare and plot figure for mechanical solution fields
 fh1 = figure(1); clf; colormap(ocean);
-fh = axb + 1*axh + 0*avs + axt;
-fw = axl + 3*axw + 2*ahs + axr;
+fh = axb + 2*axh + 1*avs + axt;
+fw = axl + 2*axw + 1*ahs + axr;
 set(fh1,UN{:},'Position',[3 3 fw fh]);
 set(fh1,'PaperUnits','Centimeters','PaperPosition',[0 0 fw fh],'PaperSize',[fw fh]);
 set(fh1,'Color','w','InvertHardcopy','off');
 set(fh1,'Resize','off');
-ax(1) = axes(UN{:},'position',[axl+0*axw+0*ahs axb+0*axh+0*avs axw axh]);
-ax(2) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
-ax(3) = axes(UN{:},'position',[axl+2*axw+2*ahs axb+0*axh+0*avs axw axh]);
+ax(1) = axes(UN{:},'position',[axl+0*axw+0*ahs axb+1*axh+1*avs axw axh]);
+ax(2) = axes(UN{:},'position',[axl+0*axw+0*ahs axb+0*axh+0*avs axw axh]);
+ax(3) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+1*axh+1*avs axw axh]);
+ax(4) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
 
 set(fh1, 'CurrentAxes', ax(1))
 imagesc(x,z,f); axis equal tight; box on; cb = colorbar;
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
 set(fh1, 'CurrentAxes', ax(2))
+imagesc(x,z,log10(k)); axis equal tight; box on; cb = colorbar;
+set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Permeability [log$_{10}$ m$^2$]',TX{:},FS{:})
+set(fh1, 'CurrentAxes', ax(3))
 imagesc(x,z,T); axis equal tight;  box on; cb = colorbar;
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
-set(fh1, 'CurrentAxes', ax(3))
+set(fh1, 'CurrentAxes', ax(4))
 imagesc(x,z,C); axis equal tight;  box on; cb = colorbar;
-set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Concentration [wt]',TX{:},FS{:})
+set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
 drawnow
 
 % prepare solution & residual arrays for VP solver
@@ -149,8 +167,8 @@ F([1,end],:) = 0;  F(:,[1,end]) = 0;
 %% TIME STEPPING LOOP
 
 % initialise timing parameters
-DTDt = 0.*T(2:end-1,2:end-1);
-DCDt = 0.*C(2:end-1,2:end-1);
+dTdt = 0.*T(2:end-1,2:end-1);
+dCdt = 0.*C(2:end-1,2:end-1);
 dt   = 0;
 step = 0;
 time = 0;
@@ -162,8 +180,8 @@ while time <= tend
     % store previous rates of change
     To    = T;
     Co    = C;
-    DTDto = DTDt;
-    DCDto = DCDt;
+    dTdto = dTdt;
+    dCdto = dCdt;
 
 
     Fnorm = 1e6;
@@ -183,9 +201,9 @@ while time <= tend
 
             diff_T = kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
 
-            DTDt = advn_T + diff_T;
+            dTdt = advn_T + diff_T;
 
-            T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (DTDt + DTDto)/2 .* dt;
+            T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (dTdt + dTdto)/2 .* dt;
                         
             % apply temperature boundary conditions
             T(:,1  ) = T(:,end-1);  % left boundary: insulating
@@ -196,18 +214,18 @@ while time <= tend
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
-            % calculate concentration advection
+            % calculate salinity advection
             advn_C = - advect(C(2:end-1,2:end-1),u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
 
             diff_C = kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
 
-            DCDt = advn_C + diff_C;
+            dCdt = advn_C + diff_C;
             
-            C(2:end-1,2:end-1) = Co(2:end-1,2:end-1) + (DCDt + DCDto)/2 .* dt;
+            C(2:end-1,2:end-1) = Co(2:end-1,2:end-1) + (dCdt + dCdto)/2 .* dt;
             
             C = max(0,min(1,C));  % saveguard min/max bounds
 
-            % apply concentration boundary conditions
+            % apply salinity boundary conditions
             C(:,1  ) = C(:,end-1);  % left boundary: closed
             C(:,end) = C(:,2    );  % right boundary: closed
             C(1  ,:) = Ctop;        % top boundary: isochemical
@@ -252,7 +270,7 @@ while time <= tend
         end
 
         % get physical time step
-        dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
+        dt = CFL * min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
@@ -267,11 +285,15 @@ while time <= tend
     end
 
     % plot solution
-    if ~mod(step,nop)
+    if ~mod(step,nout)
         if lvplt
-            fh2 = figure(2); clf; 
+            VIS = {'Visible','on'};
         else
-            fh2=figure('Visible','off'); clf;
+            VIS = {'Visible','off'};
+        end
+
+        if ~exist('fh2','var'); fh2 = figure(VIS{:});
+        else; set(0, 'CurrentFigure', fh2); clf;
         end
         
         colormap(ocean);
@@ -314,7 +336,7 @@ while time <= tend
         
         set(fh2, 'CurrentAxes', ax(5))
         imagesc(x,z,C(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Concentration [wt]',TX{:},FS{:})
+        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
         
         set(fh2, 'CurrentAxes', ax(6))
         imagesc(x,z,Drho(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
@@ -322,10 +344,10 @@ while time <= tend
         drawnow      
                             
         % print figure to file
-        if svfig
-            print(fh2,['../out/',runID,'/',runID,'_',int2str(step/nop)],'-dpng','-r200')
+        if svout
+            print(fh2,[outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'-dpng','-r200')
+            save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
         end
-        clear fh1 fh2
     end
     
     % update time and step count
