@@ -62,10 +62,10 @@ indstruct = zeros([size(f),length(zstruct)]);
 for i = 1:length(zstruct)
     indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
     indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
-    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round(D/2-zstruct(i))/D*N,1);
-    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round(D/2-xstruct(i))/D*N,2);
-    indstruct(z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
-    indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,i) = 0;
+    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
+    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
+    indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
+    indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
     indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
 end
