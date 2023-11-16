@@ -19,16 +19,16 @@ save(parfile);
 %% MODEL SETUP & INITIAL CONDITIONS
 
 % initialise grid coordinates
-h = D./N;     % grid spacing
-x = linspace(-h/2,D+h/2,N+2);
-z = linspace(-h/2,D+h/2,N+2);
-[X,Z] = meshgrid(x,z);
+h = D./N;     % grid spacing        % % physical domain depth [m]/Num. grid size        WHY A DOT AFTER D?
+x = linspace(-h/2,D+h/2,N+2);       % % -h/2 is one end point (min)  % % D+h/2 is the other end point (max) N+2 is the number of points that we want    WHY NOT JUST N? IS IT TO ACCOMODATE THE HALF GRID SIZES ON EITHER END OF SPECTRUM?
+z = linspace(-h/2,D+h/2,N+2);       % % Same thing as above, guess this would be where we make it not a square
+[X,Z] = meshgrid(x,z);              % % 2D coordinates based on coordiantes contained in x and z vectors (x columns and y rows)
 
 % initialise smooth random noise
-rng(5);
-rn = rand(N+2,N+2) - 0.5;
-for i=1:smth
-   rn(2:end-1,2:end-1) = rn(2:end-1,2:end-1) ...
+rng(5);                             % % Random number generator
+rn = rand(N+2,N+2) - 0.5;           % % IS THIS A SECOND RANDOM NUMBER GENERATOR? rand creats uniformly distributed random numbers of dimensions N+2 
+for i=1:smth                        % % smth = smoothness of initial fields defined in run file     % % WHY IS SMOOTH DEFINED AS IT IS
+   rn(2:end-1,2:end-1) = rn(2:end-1,2:end-1) ...        % % 
                        + diff(rn(:,2:end-1),2,1)./8 ...
                        + diff(rn(2:end-1,:),2,2)./8;
     rn([1 end],:) = rn([2 end-1],:);
@@ -48,6 +48,8 @@ switch Tinit  % initial temperature
         T = T0 + (T1-T0) .* Z/D;
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
+    case 'image'
+        T = TempArray
 end
 switch Cinit  % initial salinity
     case 'linear'
@@ -56,34 +58,53 @@ switch Cinit  % initial salinity
         C = C0 + (C1-C0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
 
-% add linear structures (faults, aquifers, etc.)
-% get indicator functions
-indstruct = zeros([size(f),length(zstruct)]);
-for i = 1:length(zstruct)
-    indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
-    indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
-    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
-    indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
-    indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
-    indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
-    indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
-    indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
-end
+% % add linear structures (faults, aquifers, etc.)    % % I BELIEVE THIS BIT
+% % IS LITERALLY JUST MAKING THE SHAPES
+% % get indicator functions
+% indstruct = zeros([size(f),length(zstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
+% for i = 1:length(zstruct)                               
+%     indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
+%     indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
+%     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
+%     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
+%     indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
+%     indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
+%     indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
+%     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
+% end
 
-% Smoothing function applied to structure indicator to minimise sharp interfaces
-for i=1:smth/2
-    indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
-                            + diff(indstruct(:,2:end-1,:),2,1)./8 ...
-                            + diff(indstruct(2:end-1,:,:),2,2)./8;
-    indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
-    indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
-end
+
+% add linear structures (faults, aquifers, etc.) ****************NEW
+% get indicator functions
+% indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
+
+
+
+% % Smoothing function applied to structure indicator to minimise sharp interfaces
+% for i=1:smth/2
+%     indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
+%                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
+%                             + diff(indstruct(2:end-1,:,:),2,2)./8;
+%     indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
+%     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
+% end
+
 
 % update initial condition within structures
-for i = 1:length(zstruct)
-    if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + (1-indstruct(:,:,i)).*f; end
-    if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + (1-indstruct(:,:,i)).*T; end
-    if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + (1-indstruct(:,:,i)).*C; end
+for i = 1:4
+    if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + f; end
+    if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + T; end
+    if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + C; end
+end
+
+% Smoothing function applied to structure indicator to minimise sharp
+% interfaces ******** REPEAT FOR C and T
+for i=1:smth/2
+    f(2:end-1,2:end-1) = f(2:end-1,2:end-1) ...
+                       + diff(f(:,2:end-1),2,1)./8 ...
+                       + diff(f(2:end-1,:),2,2)./8;
+    f([1 end],:,:) = f([2 end-1],:,:);
+    f(:,[1 end],:) = f(:,[2 end-1],:);
 end
 
 % add smooth random perturbations
@@ -206,8 +227,8 @@ while time <= tend
             T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (dTdt + dTdto)/2 .* dt;
                         
             % apply temperature boundary conditions
-            T(:,1  ) = T(:,end-1);  % left boundary: insulating
-            T(:,end) = T(:,2    );  % right boundary: insulating
+            T(:,1  ) = T(:,2    );  % left boundary: insulating
+            T(:,end) = T(:,end-1);  % right boundary: insulating
             T(1  ,:) = Ttop;        % top boundary: isothermal
             T(end,:) = Tbot;        % bottom boundary: constant flux
             
@@ -226,8 +247,8 @@ while time <= tend
             C = max(0,min(1,C));  % saveguard min/max bounds
 
             % apply salinity boundary conditions
-            C(:,1  ) = C(:,end-1);  % left boundary: closed
-            C(:,end) = C(:,2    );  % right boundary: closed
+            C(:,1  ) = C(:,2    );  % left boundary: closed
+            C(:,end) = C(:,end-1);  % right boundary: closed
             C(1  ,:) = Ctop;        % top boundary: isochemical
             C(end,:) = Cbot;        % bottom boundary: isochemical
             
