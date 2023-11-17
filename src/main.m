@@ -49,7 +49,7 @@ switch Tinit  % initial temperature
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
     case 'array'
-        T = TempArray
+        T = TempArray;
 end
 switch Cinit  % initial salinity
     case 'linear'
@@ -58,8 +58,8 @@ switch Cinit  % initial salinity
         C = C0 + (C1-C0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
 
-% % add linear structures (faults, aquifers, etc.)    % % I BELIEVE THIS BIT
-% % IS LITERALLY JUST MAKING THE SHAPES
+% % add linear structures (faults, aquifers, etc.) 
+% ************USE IF USING RECTANGLES TO BUILD INDSTRUCT******************
 % % get indicator functions
 % indstruct = zeros([size(f),length(zstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
 % for i = 1:length(zstruct)                               
@@ -73,14 +73,9 @@ end
 %     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
 % end
 
-
-% add linear structures (faults, aquifers, etc.) ****************NEW
-% get indicator functions
-% indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
-
-
-
-% % Smoothing function applied to structure indicator to minimise sharp interfaces
+% % Smoothing function applied to structure indicator to minimise sharp
+% interfaces 
+% ************USE IF USING RECTANGLES TO BUILD INDSTRUCT******************
 % for i=1:smth/2
 %     indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
 %                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
@@ -89,22 +84,33 @@ end
 %     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
 % end
 
-
 % update initial condition within structures
-for i = 1:4
+for i = 1:length(fstruct)
     if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + f; end
     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + T; end
     if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + C; end
 end
 
-% Smoothing function applied to structure indicator to minimise sharp
-% interfaces ******** REPEAT FOR C and T
+% Smoothing function applied to structure indicators to minimise sharp interfaces
+% ************USE IF USING ARRAYS TO BUILD INDSTRUCT******************
 for i=1:smth/2
     f(2:end-1,2:end-1) = f(2:end-1,2:end-1) ...
                        + diff(f(:,2:end-1),2,1)./8 ...
                        + diff(f(2:end-1,:),2,2)./8;
     f([1 end],:,:) = f([2 end-1],:,:);
     f(:,[1 end],:) = f(:,[2 end-1],:);
+
+    T(2:end-1,2:end-1) = T(2:end-1,2:end-1) ...
+                       + diff(T(:,2:end-1),2,1)./8 ...
+                       + diff(T(2:end-1,:),2,2)./8;
+    T([1 end],:,:) = T([2 end-1],:,:);
+    T(:,[1 end],:) = T(:,[2 end-1],:);
+
+    C(2:end-1,2:end-1) = C(2:end-1,2:end-1) ...
+                       + diff(C(:,2:end-1),2,1)./8 ...
+                       + diff(C(2:end-1,:),2,2)./8;
+    C([1 end],:,:) = C([2 end-1],:,:);
+    C(:,[1 end],:) = C(:,[2 end-1],:);
 end
 
 % add smooth random perturbations

@@ -140,43 +140,60 @@ for i = 1:nUnits
     title("Pixelated");  % Title for the image
     drawnow;             % Make it display immediately
     
-
-    %% Save images
-    filename = [outdir projectName '_' num2str(N) 'x' num2str(M) '_' imgTitle '.png'];    % Specify filename
-    imwrite(imgBW5, filename)         % Save image
-
-
-    %% Invert images & Save
-    imgInv = imcomplement(imgBW5);    % Invert image in case you need them (depends on what kind of starting image you have)
-    filename = [outdir projectName '_' num2str(N) 'x' num2str(M) '_' imgTitle '_inv.png'];    % Specify filename
-    imwrite(imgInv, filename)         % Save inverted image
-
-
-    %% Plot each unit on Figure 1
-    figure(f1);         % Select Figure 1 to plot each cluster on one figure
-    subplot(3,4,i+1);   % Each cluster goes in it's own subplot
-    imshow(imgBW5);     % Show image
-    title(imgTitle);    % Title for the image
+    c{i} = imgBW5
+     
 end
 
-%% Show all clusters on one image
-subplot(3,4,1);         % Add in the cropped original image to the first position on figure 1
-imshow(imgCrp);         % Show cropped original
+%% Replacing overlapping pixels
+for l = 1:nUnits-1
+    [m,n] = size(c{l});
+     for i = 1:m
+        for j = 1:n
+            for p = 1:nUnits-l
+            
+                if c{l}(i, j) == 1 && (c{l+p}(i, j) == 1)
+                    msg = ["replaced" num2str(i) num2str(j)]
+                    disp(msg)
+                    c{l+p}(i,j) = 0;
+                end
+            end
+        end
+     end 
+end
+                
+
+%% Save images
+for l = 1:nUnits
+    imgTitle = ['Cluster_' num2str(l)];  % Make a title for the image that tells you which cluster it is
+    filename = [outdir projectName '_' num2str(N) 'x' num2str(M) '_' imgTitle '.png'];    % Specify filename
+    imwrite(c{l}, filename);
+    msg1 = ['Saved_' imgTitle '.png'];
+    disp(msg1)
+
+%% Invert images and save
+    imgInv = imcomplement(c{l});    % Invert image in case you need them (depends on what kind of starting image you have)
+    filename = [outdir projectName '_' num2str(N) 'x' num2str(M) '_' imgTitle '_inv.png'];    % Specify filename
+    imwrite(imgInv, filename);         % Save inverted image
+    msg2 = ['Saved_' imgTitle '_inv.png'];
+    disp(msg2)
+end
+
+
+%% Plot each unit/cluster on Figure 1
+figure(f1);         % Select Figure 1 to plot each cluster on one figure
+subplot(3,4,1);     % Plot cropped original image to the first position on Figure 1
+imshow(img)
 title("Original RGB");  % Title image
+
+for i = 1:nUnits
+    imgTitle = ['Cluster_' num2str(i)];  % Make a title for the image that tells you which cluster it is
+    subplot(3,4,i+1);     % Each cluster goes in it's own subplot
+    imshow(c{i});     % Show image
+    title(imgTitle);    % Title for the image
+    drawnow
+end
+
 filename = [outdir projectName '_' num2str(N) 'x' num2str(M) '_AllClusters.png'];    % Specify filename
-saveas(f1, filename)         % Save figure of all clusters
-
-
-
-%% Remove overlapping pixels
-for j = 1:nUnits
-    if Cluster 1 [i, j] == Cluster 2 [i, j] == 1
-        replace Cluster 2 [i, j] with 0
-
-A == 1 & (B|C|D|E) == 1
-B == 1 & (C|D|E) == 1
-C == 1 & (D|E) == 1
-D == 1 & E == 1
-
-
-
+saveas(f1, filename)   ;      % Save figure of all clusters
+msg3 = ['Saved_AllClusters.png']'
+disp(msg3)

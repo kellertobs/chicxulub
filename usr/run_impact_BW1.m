@@ -55,12 +55,12 @@ TempArray = A.T_array;
 
 
 % % Make lithologic units from binary images (2D arrays) prepared using ImgPrep_LithUnits.m
-svt = imread("Kardla_TopRight_202x202_Cluster 4.png"); % Binary image showing location of Suevite
-plb = imread("Kardla_TopRight_202x202_Cluster 3.png"); % Binary image showing location of Polymict Lithic Breccia
+svt = imread("Kardla_TopRight_202x202_Cluster_4.png"); % Binary image showing location of Suevite
+plb = imread("Kardla_TopRight_202x202_Cluster_3.png"); % Binary image showing location of Polymict Lithic Breccia
 % mlb = imread(""); % Binary image showing location of Monomict Lithic Breccia
 % imr = imread(""); % Binary image showing location of Impact Melt Rock
-sed = imread("Kardla_TopRight_202x202_Cluster 5.png"); % Binary image showing location of Sediments
-wat = imread("Kardla_TopRight_202x202_Cluster 1_inv.png"); % Binary image showing location of Water
+sed = imread("Kardla_TopRight_202x202_Cluster_5.png"); % Binary image showing location of Sediments
+wat = imread("Kardla_TopRight_202x202_Cluster_1_inv.png"); % Binary image showing location of Water
 
 
 % Lithology parameters
