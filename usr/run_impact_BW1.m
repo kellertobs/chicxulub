@@ -3,7 +3,7 @@ clear; close all; clc;
 %addpath(genpath('/home/gary/Documents/Simulations/'))
 %% SET MODEL PARAMETERS
 
-runID   = 'impact'; % run identifier tag
+runID   = 'impact_2'; % run identifier tag
 outdir  = '../out'; % output directory 
 nout    = 50;       % print output every 'nop' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
@@ -31,7 +31,7 @@ f0      = 0.20;     % top/background initial porosity [vol]
 f1      = 0.005;    % base porosity [vol]  
 df      = 0.001;    % perturbation amplitude [vol]
 
-Tinit   = 'image'; % initial condition: 'linear' or 'layer'
+Tinit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
 Ttop    = 10;       % top boundary temperature
 Tbot    = 40;       % base boundary temperature
 T0      = 400;      % top/background initial temperature [C]
@@ -47,25 +47,23 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
-whos
-
-% % Trying to make background T from an image*********************
-TempArray = imread("GreyScaleT_202x202_2.png");
-TempArray = double(TempArray);
-TempArray = TempArray.*3.33333;
 
 
+% % Make background temperature from an array (make array using ImgPrep_Temperature.m)
+A = load('TestTArray.mat');
+TempArray = A.T_array;
 
-% % LITHOLOGIC UNIT INPUTS***************************
+
+% % Make lithologic units from binary images (2D arrays) prepared using ImgPrep_LithUnits.m
 svt = imread("Kardla_TopRight_202x202_Cluster 4.png"); % Binary image showing location of Suevite
 plb = imread("Kardla_TopRight_202x202_Cluster 3.png"); % Binary image showing location of Polymict Lithic Breccia
-mlb = imread("Kardla_TopRight_202x202_Cluster 2.png"); % Binary image showing location of Monomict Lithic Breccia
-imr = imread("bwTest2.png"); % Binary image showing location of Impact Melt Rock
-sed = imread("bwTest5.png"); % Binary image showing location of Sediments
-wat = imread("Kardla_TopRightCluster 1_inv.png"); % Binary image showing location of Water
+% mlb = imread(""); % Binary image showing location of Monomict Lithic Breccia
+% imr = imread(""); % Binary image showing location of Impact Melt Rock
+sed = imread("Kardla_TopRight_202x202_Cluster 5.png"); % Binary image showing location of Sediments
+wat = imread("Kardla_TopRight_202x202_Cluster 1_inv.png"); % Binary image showing location of Water
 
 
-% Rocktype parameters
+% Lithology parameters
 f_svt = 0.2;      % Suevite porosity
 T_svt = 600;      % Suevite Temperature
 C_svt = 0.01;     % Suevite salinity
@@ -97,7 +95,7 @@ C_wat =  0.035;     % Water salinity
 % wstruct = [D,D/20,D/20];      % width of structures
 % astruct = [0,30,-30];       % angle of structures to horizontal (counter-clockwise)
 
-indstruct = cat(4,   wat,   plb,   svt,   sed);
+indstruct = cat(3,   wat,   plb,   svt,   sed);
 fstruct   =       [f_wat, f_plb, f_svt, f_sed];   % porosity of structures (nan = do not set)
 % Tstruct   =       [T_wat, T_plb, T_svt, T_sed];      % temperature of structures (nan = do not set)
 Tstruct   =       [  nan,   nan,   nan,   nan];
@@ -123,5 +121,5 @@ alpha   = 0.99;      % step size for iterative solver
 beta    = 0.97;      % damping parameter for iterative solver
 
 %*****  RUN NAKHLA MODEL  *************************************************
-run('../src/main_comments.m')
+run('../src/main.m')
 %**************************************************************************

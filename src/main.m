@@ -48,7 +48,7 @@ switch Tinit  % initial temperature
         T = T0 + (T1-T0) .* Z/D;
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
-    case 'image'
+    case 'array'
         T = TempArray
 end
 switch Cinit  % initial salinity
