@@ -18,23 +18,33 @@ save(parfile);
 
 %% MODEL SETUP & INITIAL CONDITIONS
 
+% load colorbar
+load ocean
+
 % initialise grid coordinates
-h = D./N;     % grid spacing        % % physical domain depth [m]/Num. grid size        WHY A DOT AFTER D?
-x = linspace(-h/2,D+h/2,N+2);       % % -h/2 is one end point (min)  % % D+h/2 is the other end point (max) N+2 is the number of points that we want    WHY NOT JUST N? IS IT TO ACCOMODATE THE HALF GRID SIZES ON EITHER END OF SPECTRUM?
-z = linspace(-h/2,D+h/2,N+2);       % % Same thing as above, guess this would be where we make it not a square
-[X,Z] = meshgrid(x,z);              % % 2D coordinates based on coordiantes contained in x and z vectors (x columns and y rows)
+h = D./N;                        % grid spacing [m]
+x = linspace(h/2,D-h/2,N);       % x-coordinate vector
+z = linspace(h/2,D-h/2,N);       % z-coordinate vector
+[X,Z] = meshgrid(x,z);           % coordinate arrays
+
+% set ghosted index arrays
+if strcmp(BC_VP{2},'periodic')
+    icx = [N,1:N,1];
+    icz = [1,1:N,N];
+else
+    icx = [1,1:N,N];
+    icz = [1,1:N,N];
+end
 
 % initialise smooth random noise
-rng(5);                             % % Random number generator
-rn = rand(N+2,N+2) - 0.5;           % % IS THIS A SECOND RANDOM NUMBER GENERATOR? rand creats uniformly distributed random numbers of dimensions N+2 
-for i=1:smth                        % % smth = smoothness of initial fields defined in run file     % % WHY IS SMOOTH DEFINED AS IT IS
-   rn(2:end-1,2:end-1) = rn(2:end-1,2:end-1) ...        % % 
-                       + diff(rn(:,2:end-1),2,1)./8 ...
-                       + diff(rn(2:end-1,:),2,2)./8;
-    rn([1 end],:) = rn([2 end-1],:);
-    rn(:,[1 end]) = rn(:,[end-1 2]);
+rng(15); 
+smth = smth*N^2*1e-4;
+rp   = randn(N,N);
+for i = 1:round(smth)
+    rp = rp + diffus(rp,ones(size(rp))/8,1,[1,2],{'',BC_VP{2}});
+    rp = rp - mean(mean(rp));
 end
-rn = rn./max(abs(rn(:)));
+rp = rp./max(abs(rp(:)));
 
 % set initial condition
 switch finit  % initial porosity
@@ -48,8 +58,6 @@ switch Tinit  % initial temperature
         T = T0 + (T1-T0) .* Z/D;
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
-    case 'array'
-        T = TempArray
 end
 switch Cinit  % initial salinity
     case 'linear'
@@ -58,8 +66,9 @@ switch Cinit  % initial salinity
         C = C0 + (C1-C0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
 
-% % add linear structures (faults, aquifers, etc.)    % % I BELIEVE THIS BIT
-% % IS LITERALLY JUST MAKING THE SHAPES
+% TO DO: SET INITIAL CONDITIONS OTHER THAN LINEAR OR LAYER
+
+% % add linear structures (faults, aquifers, etc.)
 % % get indicator functions
 % indstruct = zeros([size(f),length(zstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
 % for i = 1:length(zstruct)                               
@@ -73,12 +82,9 @@ end
 %     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
 % end
 
-
 % add linear structures (faults, aquifers, etc.) ****************NEW
 % get indicator functions
 % indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
-
-
 
 % % Smoothing function applied to structure indicator to minimise sharp interfaces
 % for i=1:smth/2
@@ -89,33 +95,29 @@ end
 %     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
 % end
 
+% % update initial condition within structures
+% for i = 1:size(indstruct,3)
+%     if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + f; end
+%     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + T; end
+%     if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + C; end
+% end
 
-% update initial condition within structures
-for i = 1:4
-    if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + f; end
-    if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + T; end
-    if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + C; end
-end
-
-% Smoothing function applied to structure indicator to minimise sharp
-% interfaces ******** REPEAT FOR C and T
-for i=1:smth/2
-    f(2:end-1,2:end-1) = f(2:end-1,2:end-1) ...
-                       + diff(f(:,2:end-1),2,1)./8 ...
-                       + diff(f(2:end-1,:),2,2)./8;
-    f([1 end],:,:) = f([2 end-1],:,:);
-    f(:,[1 end],:) = f(:,[2 end-1],:);
-end
+% % Smoothing function applied to structure indicator to minimise sharp
+% for i=1:smth/4
+%     f = f + diffus(f,ones(size(f))/8,1,[1,2],{'',''});
+%     T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
+%     C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
+% end
 
 % add smooth random perturbations
-f = f + df.*rn;
-T = T + dT.*rn;
-C = C + dC.*rn;
+f = f + df.*rp;
+T = T + dT.*rp;
+C = C + dC.*rp;
 
 % enforce bounds on porosity
 f = max(1e-3,min(1-1e-3,f));
 
-%
+% adjust to top boundary conditions
 T = T + (Ttop-T).*exp(-max(0,Z)/h);
 C = C + (Ctop-C).*exp(-max(0,Z)/h);
 
@@ -125,11 +127,11 @@ Tin = T;
 Cin = C;
 
 % get density difference
-Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
+Drho  = - rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,icx),2)) + gC.*(C(icz,icx)-mean(C(icz,icx),2)));
 Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 
 % get permeability [m2]
-k = k0 * f.^n;  % Kozeny-Carman relationship
+k = k0 * f(icz,icx).^n;  % Kozeny-Carman relationship
 
 % get Darcy coefficient [m2/Pas]
 K  = k/mu;
@@ -140,7 +142,6 @@ Kx = (K(:,1:end-1)+K(:,2:end))./2;
 dtau = (h/2)^2./K;
 
 % prepare for plotting
-load ocean
 TX = {'Interpreter','Latex'}; FS = {'FontSize',14};
 TL = {'TickLabelInterpreter','Latex'}; TS = {'FontSize',10};
 UN = {'Units','Centimeters'};
@@ -178,18 +179,17 @@ set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS
 drawnow
 
 % prepare solution & residual arrays for VP solver
-w = zeros(N+1,N+2);  % vertical Darcy speed
-u = zeros(N+2,N+1);  % horizontal Darcy speed
-p = zeros(N+2,N+2);  % pore fluid pressure
-F = ones(N+2,N+2)./dtau;  % residual for pressure equation
-F([1,end],:) = 0;  F(:,[1,end]) = 0;
+w = zeros(N+1,N+2);   % vertical Darcy speed
+u = zeros(N+2,N+1);   % horizontal Darcy speed
+p = zeros(N+2,N+2);   % pore fluid pressure
+F = zeros(N+2,N+2)./dtau;  % residual for pressure equation
 
 
 %% TIME STEPPING LOOP
 
 % initialise timing parameters
-dTdt = 0.*T(2:end-1,2:end-1);
-dCdt = 0.*C(2:end-1,2:end-1);
+dTdt = 0.*T;
+dCdt = 0.*C;
 dt   = 0;
 step = 0;
 time = 0;
@@ -204,11 +204,9 @@ while time <= tend
     dTdto = dTdt;
     dCdto = dCdt;
 
-
     Fnorm = 1e6;
     pi    = p;
     it    = 0;
-
 
     %% NONLINEAR SOLVER LOOP
 
@@ -218,42 +216,44 @@ while time <= tend
 
             % UPDATE TEMPERATURE SOLUTION (SEMI-IMPLICIT UPDATE)
             
-            advn_T = - advect(T(2:end-1,2:end-1),u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_T);
+            advn_T = - advect(T,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_T);
 
-            diff_T = kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
+            % diff_T = kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
+            diff_T = diffus(T,kT,h,[1,2],BC_T);
 
             dTdt = advn_T + diff_T;
 
-            T(2:end-1,2:end-1) = To(2:end-1,2:end-1) + (dTdt + dTdto)/2 .* dt;
+            T = To + (dTdt + dTdto)/2 .* dt;
                         
-            % apply temperature boundary conditions
-            T(:,1  ) = T(:,2    );  % left boundary: insulating
-            T(:,end) = T(:,end-1);  % right boundary: insulating
-            T(1  ,:) = Ttop;        % top boundary: isothermal
-            T(end,:) = Tbot;        % bottom boundary: constant flux
+            % % apply temperature boundary conditions
+            % T(:,1  ) = T(:,2    );  % left boundary: insulating
+            % T(:,end) = T(:,end-1);  % right boundary: insulating
+            % T(1  ,:) = Ttop;        % top boundary: isothermal
+            % T(end,:) = Tbot;        % bottom boundary: constant flux
             
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
             % calculate salinity advection
-            advn_C = - advect(C(2:end-1,2:end-1),u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
+            advn_C = - advect(C,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
 
-            diff_C = kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
+            % diff_C = kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
+            diff_C = diffus(C,kC,h,[1,2],BC_C);
 
             dCdt = advn_C + diff_C;
             
-            C(2:end-1,2:end-1) = Co(2:end-1,2:end-1) + (dCdt + dCdto)/2 .* dt;
+            C = Co + (dCdt + dCdto)/2 .* dt;
             
             C = max(0,min(1,C));  % saveguard min/max bounds
 
-            % apply salinity boundary conditions
-            C(:,1  ) = C(:,2    );  % left boundary: closed
-            C(:,end) = C(:,end-1);  % right boundary: closed
-            C(1  ,:) = Ctop;        % top boundary: isochemical
-            C(end,:) = Cbot;        % bottom boundary: isochemical
+            % % apply salinity boundary conditions
+            % C(:,1  ) = C(:,2    );  % left boundary: closed
+            % C(:,end) = C(:,end-1);  % right boundary: closed
+            % C(1  ,:) = Ctop;        % top boundary: isochemical
+            % C(end,:) = Cbot;        % bottom boundary: isochemical
             
             % update density difference
-            Drho  = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
+            Drho  = - rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,icx),2)) + gC.*(C(icz,icx)-mean(C(icz,icx),2)));
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
         end
 
