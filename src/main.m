@@ -36,6 +36,8 @@ else
     icz = [1,1:N,N];
 end
 
+if bnchm; mms; else  % construct manufactured solution if running benchmark
+
 % initialise smooth random noise
 rng(15); 
 smth = smth*N^2*1e-4;
@@ -46,7 +48,7 @@ for i = 1:round(smth)
 end
 rp = rp./max(abs(rp(:)));
 
-% set initial condition
+% set basic initial conditions
 switch finit  % initial porosity
     case 'linear'
         f = f0 + (f1-f0) .* Z/D;
@@ -117,18 +119,16 @@ C = C + dC.*rp;
 % enforce bounds on porosity
 f = max(1e-3,min(1-1e-3,f));
 
-% adjust to top boundary conditions
+% adjust boundary layer to top boundary conditions
 T = T + (Ttop-T).*exp(-max(0,Z)/h);
 C = C + (Ctop-C).*exp(-max(0,Z)/h);
+
+end
 
 % store initial fields
 fin = f;
 Tin = T;
 Cin = C;
-
-% get density difference
-Drho  = - rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,icx),2)) + gC.*(C(icz,icx)-mean(C(icz,icx),2)));
-Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 
 % get permeability [m2]
 k = k0 * f(icz,icx).^n;  % Kozeny-Carman relationship
@@ -138,8 +138,17 @@ K  = k/mu;
 Kz = (K(1:end-1,:)+K(2:end,:))./2;
 Kx = (K(:,1:end-1)+K(:,2:end))./2;
 
-% get iterative step size
+% get iterative step size for p-solution
 dtau = (h/2)^2./K;
+
+% prepare solution & residual arrays for VP solver
+w = zeros(N+1,N+2);   % vertical Darcy speed
+u = zeros(N+2,N+1);   % horizontal Darcy speed
+p = zeros(N+2,N+2);   % pore fluid pressure
+res_p = zeros(N+2,N+2)./dtau;  % residual for pressure equation
+
+
+%% PLOT INITIAL CONDITIONS
 
 % prepare for plotting
 TX = {'Interpreter','Latex'}; FS = {'FontSize',14};
@@ -178,12 +187,6 @@ imagesc(x,z,C); axis equal tight;  box on; cb = colorbar;
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
 drawnow
 
-% prepare solution & residual arrays for VP solver
-w = zeros(N+1,N+2);   % vertical Darcy speed
-u = zeros(N+2,N+1);   % horizontal Darcy speed
-p = zeros(N+2,N+2);   % pore fluid pressure
-F = zeros(N+2,N+2)./dtau;  % residual for pressure equation
-
 
 %% TIME STEPPING LOOP
 
@@ -194,7 +197,9 @@ dt   = 0;
 step = 0;
 time = 0;
 
-while time <= tend
+while time <= tend && step<=Nt
+
+    tic;
 
     fprintf(1,'\n\n*****  step = %d,  time = %1.3e [yr],  step = %1.3e [hr] \n\n',step,time/3600/24/365.25,dt/3600);
 
@@ -204,13 +209,14 @@ while time <= tend
     dTdto = dTdt;
     dCdto = dCdt;
 
-    Fnorm = 1e6;
+    resnorm = 1e6;
     pi    = p;
     it    = 0;
 
+
     %% NONLINEAR SOLVER LOOP
 
-    while Fnorm >= tol && it <= maxit || it <= 100 
+    while resnorm >= tol && it <= maxit || it <= 100 
         
         if ~mod(it,nup)
 
@@ -218,43 +224,37 @@ while time <= tend
             
             advn_T = - advect(T,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_T);
 
-            % diff_T = kT.* (diff(T(:,2:end-1),2,1)./h^2 + diff(T(2:end-1,:),2,2)./h^2);
             diff_T = diffus(T,kT,h,[1,2],BC_T);
 
             dTdt = advn_T + diff_T;
 
-            T = To + (dTdt + dTdto)/2 .* dt;
-                        
-            % % apply temperature boundary conditions
-            % T(:,1  ) = T(:,2    );  % left boundary: insulating
-            % T(:,end) = T(:,end-1);  % right boundary: insulating
-            % T(1  ,:) = Ttop;        % top boundary: isothermal
-            % T(end,:) = Tbot;        % bottom boundary: constant flux
+            if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
+
+            res_T = (T-To)/(dt+TINY) - (dTdt + dTdto)/2;
             
+            T = T - res_T*dt;
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
             % calculate salinity advection
             advn_C = - advect(C,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
 
-            % diff_C = kC.* (diff(C(:,2:end-1),2,1)./h^2 + diff(C(2:end-1,:),2,2)./h^2);
             diff_C = diffus(C,kC,h,[1,2],BC_C);
 
             dCdt = advn_C + diff_C;
             
-            C = Co + (dCdt + dCdto)/2 .* dt;
-            
-            C = max(0,min(1,C));  % saveguard min/max bounds
+            if bnchm; dCdt = dCdt + src_C_mms(:,:,step+1); end
 
-            % % apply salinity boundary conditions
-            % C(:,1  ) = C(:,2    );  % left boundary: closed
-            % C(:,end) = C(:,end-1);  % right boundary: closed
-            % C(1  ,:) = Ctop;        % top boundary: isochemical
-            % C(end,:) = Cbot;        % bottom boundary: isochemical
+            res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
+
+            C = C - res_C*dt;
+
+            C = max(0,min(1,C));  % saveguard min/max bounds
             
             % update density difference
-            Drho  = - rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,icx),2)) + gC.*(C(icz,icx)-mean(C(icz,icx),2)));
+            Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+            if bnchm; Drhoz = Drho_mms(:,:,step+1); end
         end
 
         % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
@@ -267,18 +267,19 @@ while time <= tend
         gradPx = diff(p,1,2)./h;  % horizontal gradient
         
         % calculate Darcy segregation speed [m/s]
-        w = - Kz .* (gradPz + Drhoz.*grav);
-        u = - Kx .* (gradPx + 0          );
+        w = - Kz .* (gradPz - Drhoz.*grav);
+        u = - Kx .* (gradPx              );
         
         % calculate residual of pressure equation
-        F(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
+        res_p(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
+        if bnchm; res_p(2:end-1,2:end-1) = res_p(2:end-1,2:end-1) - src_p_mms(:,:,step+1); end
 
         % update pressure solution
-        p = pi - alpha.*F.*dtau + beta.*(pi-pii);
+        p = pi - alpha.*res_p.*dtau + beta.*(pi-pii);
         
         % apply pressure boundary conditions
         if strcmp(BC_VP{1},'closed')
-            p([1 end],:) = p([2 end-1],:) + [1;-1].*(Drho([1 end],:)+Drho([2 end-1],:))./2.*grav.*h;
+            p([1 end],:) = p([2 end-1],:) + [-1;1].*Drhoz([1 end],:).*grav.*h;
         else        
             p([1 end],:) = 0;
         end
@@ -291,21 +292,29 @@ while time <= tend
         end
 
         % get physical time step
-        dt = CFL * min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
+        if step>0
+            dt = CFL * min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
+            if bnchm; dt = dt_mms; end
+        end
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            Fnorm = norm(F(2:end-1,2:end-1).*dtau(2:end-1,2:end-1),2)./norm(p(2:end-1,2:end-1)+1,2);
+            resnorm = norm(res_p(2:end-1,2:end-1).*dtau(2:end-1,2:end-1),2)./norm(p(2:end-1,2:end-1)+1,2);
 
             % report convergence
-            fprintf(1,'---  %d,  %e\n',it,Fnorm);
+            fprintf(1,'---  %d,  %e\n',it,resnorm);
         end
         
         % increment iteration count
         it = it+1;
-    end
+        
+    end  % non-linear iteration loop
 
-    % plot solution
+    soltime = toc;  % record time to solution
+    fprintf(1,'\n\n      time to solution = %1.3e [s] \n\n',soltime);
+
+
+%%  PLOT AND SAVE SOLUTION
     if ~mod(step,nout)
         if lvplt
             VIS = {'Visible','on'};
@@ -366,7 +375,7 @@ while time <= tend
                             
         % print figure to file
         if svout
-            print(fh2,[outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'-dpng','-r200')
+            print(fh2,[outdir,'/',runID,'/',runID,'_sol_',int2str(step/nout)],'-dpng','-r200')
             save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
         end
     end
@@ -375,4 +384,4 @@ while time <= tend
     step = step + 1;
     time = time + dt;  
 
-end 
+end  % time-stepping loop

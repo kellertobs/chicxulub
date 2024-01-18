@@ -56,7 +56,7 @@ fstruct = [0.20,0.25,0.25,0.005];   % porosity of structures (nan = do not set)
 Tstruct = [400,500,500,800];      % temperature of structures (nan = do not set)
 Cstruct = [0.01,0.01,0.01,0.1];   % salinity of structures (nan = do not set)
 
-smth    = 5*(N/100)^2; % smoothness of initial fields
+smth    = 10; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'periodic'};
@@ -67,10 +67,10 @@ BC_VP   = {'open','periodic'};
 tend    = 1e11;      % model stopping time [s]
 
 % set numerical solver parameters
-CFL     = 0.50;      % Courant-Friedrich-Lewy number to limit time step size
+CFL     = 0.75;      % Courant-Friedrich-Lewy number to limit time step size
 ADVN    = 'weno5';   % advection scheme
-nup     = 200;       % update TC-solution and check residuals every nup iter
-tol     = 1e-8;      % residual tolerance for iterative solver
+nup     = 100;       % update TC-solution and check residuals every nup iter
+tol     = 1e-9;      % residual tolerance for iterative solver
 maxit   = 1e4;       % maximum number of iterations
 alpha   = 0.99;      % step size for iterative solver
 beta    = 0.97;      % damping parameter for iterative solver
