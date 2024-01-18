@@ -8,9 +8,10 @@ outdir  = '../out'; % output directory
 nout    = 10;       % print output every 'nop' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
 svout   = 1;        % save figures and data to file (1)
+bnchm   = 0;        % run benchmark
 
 % set domain parameters
-N       = 200;      % num. grid size
+N       = 500;      % num. grid size
 D       = 2e3;      % phys. domain depth [m]
 
 % set physical parameters
@@ -47,16 +48,16 @@ dC      = 1e-4;     % perturbation amplitude [wt]
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
 
-xstruct = [D/2,D/5,4*D/5,D/2];    % midpoint x-position of structures
-zstruct = [250,150,150,350];      % midpoint z-position of structures
-hstruct = [500,400,400,80];      % height of structures
-wstruct = [D,D/20,D/20,800];      % width of structures
-astruct = [0,30,-30,0];       % angle of structures to horizontal (counter-clockwise)
-fstruct = [0.20,0.25,0.25,0.005];   % porosity of structures (nan = do not set)
-Tstruct = [400,500,500,800];      % temperature of structures (nan = do not set)
-Cstruct = [0.01,0.01,0.01,0.1];   % salinity of structures (nan = do not set)
+xstruct = [];       % midpoint x-position of structures
+zstruct = [];       % midpoint z-position of structures
+hstruct = [];       % height of structures
+wstruct = [];       % width of structures
+astruct = [];       % angle of structures to horizontal (counter-clockwise)
+fstruct = [];       % porosity of structures (nan = do not set)
+Tstruct = [];       % temperature of structures (nan = do not set)
+Cstruct = [];       % salinity of structures (nan = do not set)
 
-smth    = 10; % smoothness of initial fields
+smth    = 10;       % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {'closed','periodic'};
@@ -65,6 +66,7 @@ BC_VP   = {'closed','periodic'};
 
 % set model timing parameters
 tend    = 1e11;      % model stopping time [s]
+Nt      = 1e4;       % max number of time step
 
 % set numerical solver parameters
 CFL     = 0.75;      % Courant-Friedrich-Lewy number to limit time step size

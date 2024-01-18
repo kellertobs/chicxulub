@@ -20,6 +20,7 @@ save(parfile);
 
 % load colorbar
 load ocean
+TINY = 1e-16;
 
 % initialise grid coordinates
 h = D./N;                        % grid spacing [m]
@@ -307,7 +308,7 @@ while time <= tend && step<=Nt
         
         % increment iteration count
         it = it+1;
-        
+
     end  % non-linear iteration loop
 
     soltime = toc;  % record time to solution
