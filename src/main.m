@@ -37,7 +37,7 @@ else
     icz = [1,1:N,N];
 end
 
-if bnchm; mms; else  % construct manufactured solution if running benchmark
+if bnchm; mms; else  % construct manufactured solution if running benchmark [AP: Where is mms defined?]
 
 % initialise smooth random noise
 rng(15); 
@@ -55,12 +55,16 @@ switch finit  % initial porosity
         f = f0 + (f1-f0) .* Z/D;
     case 'layer'
         f = f0 + (f1-f0) .* (1+erf((Z/D-zlay)/wlay))/2;
+    case 'array'
+        f = fArray;
 end
 switch Tinit  % initial temperature
     case 'linear'
         T = T0 + (T1-T0) .* Z/D;
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
+    case 'array'
+        T = TArray;
 end
 switch Cinit  % initial salinity
     case 'linear'
@@ -69,48 +73,49 @@ switch Cinit  % initial salinity
         C = C0 + (C1-C0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
 
-% TO DO: SET INITIAL CONDITIONS OTHER THAN LINEAR OR LAYER
 
-% % add linear structures (faults, aquifers, etc.)
-% % get indicator functions
-% indstruct = zeros([size(f),length(zstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
-% for i = 1:length(zstruct)                               
-%     indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
-%     indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
-%     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
-%     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
-%     indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
-%     indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
-%     indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
-%     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
-% end
+% % % add linear structures (faults, aquifers, etc.)
+% % % get indicator functions
+% % % indstruct = zeros([size(f),length(fstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
+% % % for i = 1:length(zstruct)                               
+% % %     indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
+% % %     indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
+% % %     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
+% % %     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
+% % %     indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
+% % %     indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
+% % %     indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
+% % %     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
+% % % end
+% % 
+% % % % add linear structures (faults, aquifers, etc.) ****************NEW
+% % % % get indicator functions
+% % % indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
+% % % 
+% % % % Smoothing function applied to structure indicator to minimise sharp interfaces
+% % % for i=1:smth/2
+% % %     indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
+% % %                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
+% % %                             + diff(indstruct(2:end-1,:,:),2,2)./8;
+% % %     indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
+% % %     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
+% % % end
 
-% add linear structures (faults, aquifers, etc.) ****************NEW
-% get indicator functions
-% indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
+% update initial condition within structures
+for i = 1:size(indstruct,3)
+    if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + (1-indstruct(:,:,i)).*f; end
+%     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + (1-indstruct(:,:,i)).*T; end
+    if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + (1-indstruct(:,:,i)).*C; end
+end
 
-% % Smoothing function applied to structure indicator to minimise sharp interfaces
-% for i=1:smth/2
-%     indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
-%                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
-%                             + diff(indstruct(2:end-1,:,:),2,2)./8;
-%     indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
-%     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
-% end
+% Smoothing function applied to structure indicator to minimise sharp
+for i=1:smth/4
+    f = f + diffus(f,ones(size(f))/8,1,[1,2],{'',''});
+    T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
+    C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
+end
 
-% % update initial condition within structures
-% for i = 1:size(indstruct,3)
-%     if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + f; end
-%     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + T; end
-%     if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + C; end
-% end
-
-% % Smoothing function applied to structure indicator to minimise sharp
-% for i=1:smth/4
-%     f = f + diffus(f,ones(size(f))/8,1,[1,2],{'',''});
-%     T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
-%     C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
-% end
+if exist('wat','var'); rp(wat==1) = 0; end
 
 % add smooth random perturbations
 f = f + df.*rp;
@@ -189,7 +194,9 @@ set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS
 drawnow
 
 
-%% TIME STEPPING LOOP
+
+%% TIME STEPPING LOOP      
+
 
 % initialise timing parameters
 dTdt = 0.*T;
@@ -198,8 +205,11 @@ dt   = 0;
 step = 0;
 time = 0;
 
-while time <= tend && step<=Nt
 
+
+while time <= tend && step <= Nt      
+
+        
     tic;
 
     fprintf(1,'\n\n*****  step = %d,  time = %1.3e [yr],  step = %1.3e [hr] \n\n',step,time/3600/24/365.25,dt/3600);
@@ -233,7 +243,7 @@ while time <= tend && step<=Nt
 
             res_T = (T-To)/(dt+TINY) - (dTdt + dTdto)/2;
             
-            T = T - res_T*dt;
+            T(wat==0) = T(wat==0) - res_T(wat==0)*dt;
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -248,7 +258,7 @@ while time <= tend && step<=Nt
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            C = C - res_C*dt;
+            C(wat==0) = C(wat==0)- res_C(wat==0)*dt;
 
             C = max(0,min(1,C));  % saveguard min/max bounds
             
@@ -267,13 +277,17 @@ while time <= tend && step<=Nt
         gradPz = diff(p,1,1)./h;  % vertical gradient
         gradPx = diff(p,1,2)./h;  % horizontal gradient
         
+        watfz = ceil((wat([1 1:end],[1,1:end,end]) + wat([1:end end],[1,1:end,end]))/2);
+        watfx = ceil((wat([1,1:end,end],[1 1:end]) + wat([1,1:end,end],[1:end end]))/2);
+
         % calculate Darcy segregation speed [m/s]
-        w = - Kz .* (gradPz - Drhoz.*grav);
-        u = - Kx .* (gradPx              );
+        w = - Kz .* (gradPz - Drhoz.*grav) .* (watfz==0);
+        u = - Kx .* (gradPx              ) .* (watfx==0);
         
         % calculate residual of pressure equation
         res_p(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
         if bnchm; res_p(2:end-1,2:end-1) = res_p(2:end-1,2:end-1) - src_p_mms(:,:,step+1); end
+        res_p(wat==1) = 0;
 
         % update pressure solution
         p = pi - alpha.*res_p.*dtau + beta.*(pi-pii);
