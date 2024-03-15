@@ -1,5 +1,5 @@
 % %% TO DO LIST
-% - Make assigning temperatures to clusters smarter 
+% -  
 
 
 %% Initial space set up
@@ -9,25 +9,24 @@ close all;	% Close all figure windows except those created by imtool.
 imtool close all;	% Close all figure windows created by imtool.
 workspace;	% Make sure the workspace panel is showing.
 
-%% This is a workbook to create inputs for run_impact.m so that you can have complex temperature distributions
+%% This is a workbook to create inputs for run_impact.m so that you can have complex porosity distributions
 % % Crop image to dimensions you want (differentiate between full crater and half crater)
 % % Inputs:
-% %     - image of the temperature distributions - each temperature zone
+% %     - image of the porosity distributions - each porosity zone
 % should be a uniform colour
 
 % % Output: N by M array with temperature distributions
 
 
 %% Initial user inputs/options
-imgName = "../img_inputs/Lonar/Lonar_Full_Temperature.png"  % Filename of the image of the cross section
+imgName = "Kardla/Kardla_Right_Porosity.png"  % Filename of the image of the cross section
 N = 200         % dimensions for number of pixels  (should be same as grid size in Run Impact 
 M = N           % dimensions for depth of pixels in case this ever stops being square
-nUnits = 9;     % Need to specify number of Temperature units here; think they're subsequently clustered with 1 being highest area and 5 being lowest
+nUnits = 11;     % Need to specify number of Temperature units here; think they're subsequently clustered with 1 being highest area and 5 being lowest
 fontSize = 16;  % Fontsize for plotting images while processing
 
-
-outdir = '../img_inputs/Lonar/'
-projectName = 'Lonar_Full_01' % Specify project name so files will saved with some info
+outdir = '../img_inputs/Kardla/'
+projectName = 'Kardla_Right' % Specify project name so files will saved with some info
 foldername = [outdir projectName '_' num2str(N) 'x' num2str(M)];    % Specify foldername for output
 mkdir (sprintf(foldername));    % Make the specified directory
 
@@ -124,7 +123,7 @@ for i = 1:nUnits
 
 
     %% Thicken to help with units not matching up once in run_impact
-    imgBW4 = bwmorph(imgBW3, 'thicken', 5);     % Add a few pixels to the edges of each unit to fill in gaps between units
+    imgBW4 = bwmorph(imgBW3, 'thicken', 3);     % Add a few pixels to the edges of each unit to fill in gaps between units
 
     subplot(3,4, 9);    % Where to plot image
     imshow(imgBW4)      % Show the image
@@ -177,78 +176,39 @@ for i = 1:nUnits
     drawnow
 end
 
-filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_TClusters.png'];    % Specify filename
+filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_fClusters.png'];    % Specify filename
 saveas(f1, filename)   ;      % Save figure of all clusters
 % msg3 = ['Saved_AllClusters.png']
 % disp(msg3)
+
 %% Break so you can assign values to clusters
 msg4 = ['Assign temperatures to clusters in ImgPrep_Temperature.m; then type dbcont in command window '];
 disp(msg4)
 keyboard    %% To get back to running "dbcont"
 
-%% Assign temperatures to each array (need to do this by person brain at the moment, may be a smarter way)
-T_array = []
 
-T_array{1} = 100*c{1};
-T_array{2} = 50*c{2};
-T_array{3} = 400*c{3};
-T_array{4} = 10*c{4};
-T_array{5} = 500*c{5};
+%% Assign porosity to each array (need to do this by person brain at the moment, may be a smarter way)
+f_array = []
 
-T_array{6}  = 200*c{6};
-T_array{7}  = 300*c{7};
-T_array{8}  = 600*c{8};
-T_array{9}  = 700*c{9};
+f_array{1} = 0.2*c{8};
+f_array{2} = 0.12*c{11};
+f_array{3} = 0.05*c{4};
+f_array{4} = 0.04*c{3};
+f_array{5} = 0.04*c{10};
 
-T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9};
+f_array{6}  = 0.03*c{7};
+f_array{7}  = 0.03*c{5};
+f_array{8}  = 0.02*c{1};
+f_array{9}  = 0.02*c{9};
+f_array{10} = 0.01*c{2};
 
+f_array{11}  = 0.5*c{6};   %% Water or air layer
 
-% T_array{1} = 50*c{1};
-% T_array{2} = 100*c{4};
-% T_array{3} = 150*c{10};
-% T_array{4} = 200*c{2};
-% T_array{5} = 250*c{15};
-% 
-% T_array{6}  = 300*c{7};
-% T_array{7}  = 350*c{11};
-% T_array{8}  = 400*c{9};
-% T_array{9}  = 450*c{14};
-% T_array{10} = 500*c{8};
-% 
-% T_array{11}  = 550*c{12};
-% T_array{12}  = 600*c{5};
-% T_array{13}  = 650*c{13};
-% T_array{14}  = 700*c{6};
-% T_array{15}  = 750*c{17};
-% 
-% T_array{16}  = 800*c{16};
-% T_array{17}  = 10*c{3};
-% 
-% T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9} + T_array{10} + T_array{11} + T_array{12} + T_array{13} + T_array{14} + T_array{15} + T_array{16} + T_array{17};
-
-%% Change all values in array with temperatures - This is the old way
-
-% max_grey = max(imgBW5, [], 'all' )  % Maximum luminosity in greyscale image (colour of max T contours)
-% min_grey = min(imgBW5, [], 'all' )  % Minimum luminosity in greyscale image (colour of min T contours)
-% 
-% max_T = 800    % Maximum Temperature 
-% min_T = 50      % Minimum Temperature 
-% 
-% n_T   = length(unique(imgBW5))  % Total number of unique values in array
-% 
-% contour_width = (max_T-min_T)/n_T
-% 
-% scaling_factor = double(max_T/max_grey);
-% TempArray = double(imgBW5);
-% 
-% T_array = TempArray.*scaling_factor;
-% 
-% max_T_array = max(T_array, [], 'all')
-% min_T_array = min(T_array, [], "all")
+f_array2 = f_array{1} + f_array{2} + f_array{3} + f_array{4} + f_array{5} + f_array{6} + f_array{7} + f_array{8} + f_array{9} + f_array{10} + f_array{11};
 
 
-%% Save array of temperatures
+%% Save array of porosities
 
-filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_TArray.mat'];    % Specify filename
-save([filename],'T_array2')
+filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_fArray.mat'];    % Specify filename
+save([filename],'f_array2');
 

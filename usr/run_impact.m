@@ -3,8 +3,9 @@ clear; close all; clc;
 %addpath(genpath('/home/gary/Documents/Simulations/'))
 %% SET MODEL PARAMETERS
 
-runID   = 'impact_test'; % run identifier tag
+runID   = 'Kardla_01'; % run identifier tag
 outdir  = '../out'; % output directory 
+indir   = '../img_inputs/Kardla/Kardla_Full_200x200/' % input directory for arrays
 nout    = 50;       % print output every 'nop' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
 svout   = 1;        % save figures and data to file (1)
@@ -26,7 +27,7 @@ aT      = 1e-4;     % thermal expansivity [1/K]
 gC      = 1.1;      % chemical expansivity [1/wt]
 
 % set initial condition parameters
-finit   = 'linear'; % initial condition: 'linear' or 'layer' or 'array'
+finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
 f0      = 0.10;     % top/background initial porosity [vol]
 f1      = 0.01;     % base porosity [vol]  
 df      = 0.001;    % perturbation amplitude [vol]
@@ -49,22 +50,22 @@ zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
 
 
-% % Make background temperature from an array (make array using ImgPrep_Temperature.m)
-A = load('../img_inputs/TestTArray.mat');
-TArray = A.T_array;
+%% Make background temperature and porosity from an array (make array using ImgPrep_Temperature.m and ImgPrep_Porosity.m)
+TArr = load([indir 'Kardla_Right_200x200_TArray.mat']);
+TArray = TArr.T_array2;
 
-% B = load('../img_inputs/TestfArray.mat')
-% fArray = B.f_array;
+fArr = load([indir 'Kardla_Right_200x200_fArray.mat'])
+fArray = fArr.f_array2;
 
 
-% % Make lithologic units from binary images (2D arrays) prepared using ImgPrep_LithUnits.m
-svt = imread("Kardla_TopRight_200x200_Cluster_4.png"); % Binary image showing location of Suevite
-plb = imread("Kardla_TopRight_200x200_Cluster_3.png"); % Binary image showing location of Polymict Lithic Breccia
+%% Make lithologic units from binary images (2D arrays) prepared using ImgPrep_LithUnits.m
+svt = imread(indir + "Kardla_Right_200x200_Lith_4.png"); % Binary image showing location of Suevite
+plb = imread(indir + "Kardla_Right_200x200_Lith_3.png"); % Binary image showing location of Polymict Lithic Breccia
 % mlb = imread(""); % Binary image showing location of Monomict Lithic Breccia
 % imr = imread(""); % Binary image showing location of Impact Melt Rock
-sed = imread("Kardla_TopRight_200x200_Cluster_5.png"); % Binary image showing location of Sediments
-wat = imread("Kardla_TopRight_200x200_Cluster_1_inv.png"); % Binary image showing location of Water
-wat = wat .* ((sed + plb + svt)==0);
+sed = imread(indir + "Kardla_Right_200x200_Lith_5.png"); % Binary image showing location of Sediments
+wat = imread(indir + "Kardla_Right_200x200_Lith_2.png"); % Binary image showing location of Water
+% wat = wat .* ((sed + plb + svt)==0);
 
 % Lithology parameters
 f_svt = 0.3;      % Suevite porosity
@@ -102,8 +103,9 @@ C_wat =  0.035;   % Water salinity (wt fraction - 0.2 = 20% of mass is salinity_
 % Cstruct = [0.01,0.01,0.01,0.1];   % salinity of structures (nan = do not set)
 
 indstruct = cat(3,   wat,   plb,   svt,   sed);
-fstruct   =       [f_wat, f_plb, f_svt, f_sed];   % porosity of structures (nan = do not set)
-% Tstruct   =       [T_wat, T_plb, T_svt, T_sed];      % temperature of structures (nan = do not set)
+% fstruct   =       [f_wat, f_plb, f_svt, f_sed];   % porosity of structures (nan = do not set)
+fstruct   =       [  nan,   nan,   nan,   nan];   % porosity of structures (nan = do not set)
+% Tstruct   =       [T_wat, nan, T_svt, nan];      % temperature of structures (nan = do not set)
 Tstruct   =       [  nan,   nan,   nan,   nan];
 Cstruct   =       [C_wat, C_plb, C_svt, C_sed];   % salinity of structures (nan = do not set)
 watind = 1;
