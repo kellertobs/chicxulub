@@ -5,7 +5,7 @@ clear; close all; clc;
 
 runID   = 'Kardla_01'; % run identifier tag
 outdir  = '../out'; % output directory 
-indir   = '../img_inputs/Kardla/Kardla_Full_200x200/' % input directory for arrays
+indir   = '../img_inputs/Kardla/Kardla_Right_200x200/'; % input directory for arrays
 nout    = 50;       % print output every 'nop' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
 svout   = 1;        % save figures and data to file (1)
@@ -51,7 +51,7 @@ wlay    = 0.02;     % relative width of layer boundary
 
 
 %% Make background temperature and porosity from an array (make array using ImgPrep_Temperature.m and ImgPrep_Porosity.m)
-TArr = load([indir 'Kardla_Right_200x200_TArray.mat']);
+TArr   = load([indir 'Kardla_Right_200x200_TArray.mat']);
 TArray = TArr.T_array2;
 
 fArr = load([indir 'Kardla_Right_200x200_fArray.mat'])
