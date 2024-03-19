@@ -1,6 +1,6 @@
 %% SET MODEL PARAMETERS
 
-runID   = 'Kardla_01'; % run identifier tag
+runID   = 'impact_default'; % run identifier tag
 outdir  = '../out'; % output directory 
 indir   = '../img_inputs/Kardla/Kardla_Right_200x200/'; % input directory for arrays
 nout    = 50;       % print output every 'nop' steps
