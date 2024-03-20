@@ -81,7 +81,7 @@ f_sed =  0.2;     % Sediment porosity (volume fraction)
 T_sed =  100;     % Sediment Temperature
 C_sed =  0.01;     % Sediment salinity (wt fraction - 0.2 = 20% of mass is salinity_ sea water is 3.5% (0.035)
 
-f_wat =  0.5;     % Water porosity
+f_wat =  0.3;     % Water porosity
 T_wat =  10;      % Water Temperature
 C_wat =  0.035;   % Water salinity (wt fraction - 0.2 = 20% of mass is salinity_ sea water is 3.5% (0.035)
 
