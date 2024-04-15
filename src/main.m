@@ -145,13 +145,13 @@ Kz = (K(1:end-1,:)+K(2:end,:))./2;
 Kx = (K(:,1:end-1)+K(:,2:end))./2;
 
 % get iterative step size for p-solution
-dtau = (h/2)^2./K;
+dtau = (h/2)^2./K(2:end-1,2:end-1);
 
 % prepare solution & residual arrays for VP solver
 w = zeros(N+1,N+2);   % vertical Darcy speed
 u = zeros(N+2,N+1);   % horizontal Darcy speed
 p = zeros(N+2,N+2);   % pore fluid pressure
-res_p = zeros(N+2,N+2)./dtau;  % residual for pressure equation
+res_p = zeros(N,N)./dtau;  % residual for pressure equation
 
 
 %% PLOT INITIAL CONDITIONS
@@ -243,7 +243,9 @@ while time <= tend && step <= Nt
 
             res_T = (T-To)/(dt+TINY) - (dTdt + dTdto)/2;
             
-            T(wat==0) = T(wat==0) - res_T(wat==0)*dt;
+            % T(wat==0) = T(wat==0) - res_T(wat==0)*dt;
+            T = T - res_T*dt;
+            T(wat==1) = mean(T(wat==1),'all');
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -258,7 +260,9 @@ while time <= tend && step <= Nt
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            C(wat==0) = C(wat==0)- res_C(wat==0)*dt;
+            % C(wat==0) = C(wat==0)- res_C(wat==0)*dt;
+            C = C - res_C*dt;
+            C(wat==1) = mean(C(wat==1),'all');
 
             C = max(0,min(1,C));  % saveguard min/max bounds
             
@@ -277,20 +281,20 @@ while time <= tend && step <= Nt
         gradPz = diff(p,1,1)./h;  % vertical gradient
         gradPx = diff(p,1,2)./h;  % horizontal gradient
         
-        watfz = ceil((wat([1 1:end],[1,1:end,end]) + wat([1:end end],[1,1:end,end]))/2);
-        watfx = ceil((wat([1,1:end,end],[1 1:end]) + wat([1,1:end,end],[1:end end]))/2);
+        watfz = floor((wat([1 1:end],[1,1:end,end]) + wat([1:end end],[1,1:end,end]))/2);
+        watfx = floor((wat([1,1:end,end],[1 1:end]) + wat([1,1:end,end],[1:end end]))/2);
 
         % calculate Darcy segregation speed [m/s]
-        w = - Kz .* (gradPz - Drhoz.*grav) .* (watfz==0);
-        u = - Kx .* (gradPx              ) .* (watfx==0);
+        w = - Kz .* (gradPz - Drhoz.*grav);% .* (watfz==0);
+        u = - Kx .* (gradPx              );% .* (watfx==0);
         
         % calculate residual of pressure equation
-        res_p(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
-        if bnchm; res_p(2:end-1,2:end-1) = res_p(2:end-1,2:end-1) - src_p_mms(:,:,step+1); end
-        res_p(wat==1) = 0;
+        res_p = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
+        if bnchm; res_p = res_p - src_p_mms(:,:,step+1); end
+        % res_p(wat==1) = 0;
 
         % update pressure solution
-        p = pi - alpha.*res_p.*dtau + beta.*(pi-pii);
+        p(2:end-1,2:end-1) = pi(2:end-1,2:end-1) - alpha.*res_p.*dtau + beta.*(pi(2:end-1,2:end-1)-pii(2:end-1,2:end-1));
         
         % apply pressure boundary conditions
         if strcmp(BC_VP{1},'closed')
@@ -314,7 +318,7 @@ while time <= tend && step <= Nt
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            resnorm = norm(res_p(2:end-1,2:end-1).*dtau(2:end-1,2:end-1),2)./norm(p(2:end-1,2:end-1)+1,2);
+            resnorm = norm(res_p.*dtau,2)./norm(p(2:end-1,2:end-1)+1e-6,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);
