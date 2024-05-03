@@ -63,8 +63,6 @@ switch Tinit  % initial temperature
         T = T0 + (T1-T0) .* Z/D;
     case 'layer'
         T = T0 + (T1-T0) .* (1+erf((Z/D-zlay)/wlay))/2;
-    case 'array'
-        T = TArray;
 end
 switch Cinit  % initial salinity
     case 'linear'
@@ -103,10 +101,24 @@ end
 
 % update initial condition within structures
 for i = 1:size(indstruct,3)
-    if ~isnan(fstruct(i)); f = indstruct(:,:,i).*fstruct(i) + (1-indstruct(:,:,i)).*f; end
+    if ~isnan(fstruct(i)); f = f + indstruct(:,:,i).*fstruct(i); end% + (1-indstruct(:,:,i)).*f; end
 %     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + (1-indstruct(:,:,i)).*T; end
-    if ~isnan(Cstruct(i)); C = indstruct(:,:,i).*Cstruct(i) + (1-indstruct(:,:,i)).*C; end
+    if ~isnan(Cstruct(i)); C = C + indstruct(:,:,i).*Cstruct(i); end% + (1-indstruct(:,:,i)).*C; end
 end
+
+T = T + TArray;
+
+
+% prepare treatment for water
+if exist('wat','var')
+    % if isnan(T_wat + C_wat); wat_evolve = true; else; wat_evolve = false; end
+    rp(wat==1) = 0;
+     f(wat==1) = max(f(:)+0.2);
+    wat_surf = diff(wat,1)>0;
+    wat_base = diff(wat,1)<0;
+    [jbed, ibed] = find(diff(wat(icz,icx))<0);
+end
+if exist('air','var'); rp(air==1) = 0; end
 
 % Smoothing function applied to structure indicator to minimise sharp
 for i=1:smth/4
@@ -114,8 +126,6 @@ for i=1:smth/4
     T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
     C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
 end
-
-if exist('wat','var'); rp(wat==1) = 0; end
 
 % add smooth random perturbations
 f = f + df.*rp;
@@ -206,7 +216,6 @@ step = 0;
 time = 0;
 
 
-
 while time <= tend && step <= Nt      
 
         
@@ -237,15 +246,24 @@ while time <= tend && step <= Nt
 
             diff_T = diffus(T,kT,h,[1,2],BC_T);
 
-            dTdt = advn_T + diff_T;
+            eqlb_T = -(T_wat-T_air)./tau_eqlb.*(1-wat);
+
+            dTdt = advn_T + diff_T + eqlb_T;
 
             if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
 
             res_T = (T-To)/(dt+TINY) - (dTdt + dTdto)/2;
             
-            % T(wat==0) = T(wat==0) - res_T(wat==0)*dt;
+            res_T(air==1) = 0;  % set air to isothermal
+            if wat_evolve
+                res_T(wat==1) = mean(res_T(wat==1),'all');   % set water to evolving reservoir
+            else
+                res_T(wat==1) = 0;  % set water to isothermal
+            end
+
             T = T - res_T*dt;
-            T(wat==1) = mean(T(wat==1),'all');
+
+            T_wat = mean(T(wat==1),'all');
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -260,14 +278,21 @@ while time <= tend && step <= Nt
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            % C(wat==0) = C(wat==0)- res_C(wat==0)*dt;
+            res_C(air==1) = 0;  % set air to isohaline
+            if wat_evolve
+                res_C(wat==1) = mean(res_C(wat==1),'all');   % set water to evolving reservoir
+            else
+                res_C(wat==1) = 0;  % set water to isohaline
+            end
+
             C = C - res_C*dt;
-            C(wat==1) = mean(C(wat==1),'all');
 
             C = max(0,min(1,C));  % saveguard min/max bounds
-            
+            C_wat = mean(C(wat==1),'all');
+
             % update density difference
             Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
+            Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
             if bnchm; Drhoz = Drho_mms(:,:,step+1); end
         end
@@ -288,10 +313,13 @@ while time <= tend && step <= Nt
         w = - Kz .* (gradPz - Drhoz.*grav);% .* (watfz==0);
         u = - Kx .* (gradPx              );% .* (watfx==0);
         
+        w(2:end,:) = w(2:end,:).*(1-air(:,icx));  % set air to zero flow
+
         % calculate residual of pressure equation
         res_p = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
         if bnchm; res_p = res_p - src_p_mms(:,:,step+1); end
-        % res_p(wat==1) = 0;
+
+        res_p(air==1) = 0;  % set air to zero
 
         % update pressure solution
         p(2:end-1,2:end-1) = pi(2:end-1,2:end-1) - alpha.*res_p.*dtau + beta.*(pi(2:end-1,2:end-1)-pii(2:end-1,2:end-1));
@@ -329,75 +357,15 @@ while time <= tend && step <= Nt
 
     end  % non-linear iteration loop
 
+    fprintf(1,'\n\n      mean water T = %2.4f [C] \n',T_wat);
+    fprintf(1,'      mean water C = %2.4f [wt] \n',C_wat);
+
     soltime = toc;  % record time to solution
     fprintf(1,'\n\n      time to solution = %1.3e [s] \n\n',soltime);
 
 
 %%  PLOT AND SAVE SOLUTION
-    if ~mod(step,nout)
-        if lvplt
-            VIS = {'Visible','on'};
-        else
-            VIS = {'Visible','off'};
-        end
-
-        if ~exist('fh2','var'); fh2 = figure(VIS{:});
-        else; set(0, 'CurrentFigure', fh2); clf;
-        end
-        
-        colormap(ocean);
-         
-        axh = 6.00; axw = 7.50; %   Height and width of axis
-        ahs = 1.50; avs = 1.00; %   Horzontal and vertial distance between axis
-        axb = 1.50; axt = 2.00; %   Bottom and top;Size of page relative to axis
-        axl = 1.75; axr = 0.90; %   Right and left; spacing of axis to page
-        
-        fh = axb + 2*axh + 1*avs + axt;
-        fw = axl + 3*axw + 2*ahs + axr;
-        set(fh2,UN{:},'Position',[9 9 fw fh]);
-        set(fh2,'PaperUnits','Centimeters','PaperPosition',[0 0 fw fh],'PaperSize',[fw fh]);
-        set(fh2,'Color','w','InvertHardcopy','off');
-        set(fh2,'Resize','off');
-        ax(1) = axes(UN{:},'position',[axl+0*axw+0*ahs axb+1*axh+1*avs axw axh]);
-        ax(2) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+1*axh+1*avs axw axh]);
-        ax(3) = axes(UN{:},'position',[axl+2*axw+2*ahs axb+1*axh+1*avs axw axh]);
-        ax(4) = axes(UN{:},'position',[axl+0*axw+0*ahs axb+0*axh+0*avs axw axh]);
-        ax(5) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
-        ax(6) = axes(UN{:},'position',[axl+2*axw+2*ahs axb+0*axh+0*avs axw axh]);
-
-        sgtitle(sprintf('Time elapsed %.3f yr', time/3600/24/365.25),TX{:},FS{:})
-         
-        set(fh2, 'CurrentAxes', ax(1))
-        imagesc(x,z,-w(2:end-1,:).*3600); axis equal tight; box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation z-speed [m/hr]',TX{:},FS{:})
-        
-        set(fh2, 'CurrentAxes', ax(2))
-        imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation x-speed [m/hr]',TX{:},FS{:})
-        
-        set(fh2, 'CurrentAxes', ax(3))
-        imagesc(x,z,p(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Dynamic fluid pressure [Pa]',TX{:},FS{:})
-      
-        set(fh2, 'CurrentAxes', ax(4))
-        imagesc(x,z,T(2:end-1,2:end-1)); axis equal tight; box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
-        
-        set(fh2, 'CurrentAxes', ax(5))
-        imagesc(x,z,C(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
-        
-        set(fh2, 'CurrentAxes', ax(6))
-        imagesc(x,z,Drho(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
-        set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Density contrast [kg/m$^3$]',TX{:},FS{:})
-        drawnow      
-                            
-        % print figure to file
-        if svout
-            print(fh2,[outdir,'/',runID,'/',runID,'_sol_',int2str(step/nout)],'-dpng','-r200')
-            save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
-        end
-    end
+    output;
     
     % update time and step count
     step = step + 1;

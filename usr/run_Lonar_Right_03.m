@@ -24,6 +24,12 @@ bsmt = imread(indir + "Lonar_Right_03_200x200_Lith_1.png"); % Binary image showi
 wat  = imread(indir + "Lonar_Right_03_200x200_Lith_4.png"); % Binary image showing location of Water
 air  = imread(indir + "Lonar_Right_03_200x200_Lith_7.png"); % Binary image showing location of Air
 
+wat_evolve = true;              % evolve water as well-mixed reservoir; else keep T,C constant
+tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
+
+wat(1,:)   = 0;                 % input image has wrong values along topmost row, please fix
+air(1,:)   = 1;                 % input image has wrong values along topmost row, please fix
+
 cbrc = imread(indir + "Lonar_Right_03_200x200_Lith_6.png"); % Binary image showing location of Coarse Breccia
 sed  = imread(indir + "Lonar_Right_03_200x200_Lith_5.png"); % Binary image showing location of Sediments
 bslt_pdr = imread(indir + "Lonar_Right_03_200x200_Lith_3.png"); % Binary image showing location of Powdered Basalt
@@ -34,7 +40,7 @@ fstruct   =       [f_air, f_wat, f_sed,  f_plb,      f_mlb, f_imr, f_bslt, f_bsm
 Tstruct   =       [T_air, T_wat, T_sed,  T_plb,      T_mlb, T_imr, T_bslt, T_bsmt];   % temperature of structures (nan = do not set)
 Cstruct   =       [C_air, C_wat, C_sed,  C_plb,      C_mlb, C_imr, C_bslt, C_bsmt];   % salinity of structures (nan = do not set)
 
-tol     = 1e-8;      % residual tolerance for iterative solver
+tol     = 1e-7;      % residual tolerance for iterative solver
 alpha   = 1.25;      % step size for iterative solver
 beta    = 0.99;      % damping parameter for iterative solver
 
