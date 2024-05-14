@@ -111,11 +111,10 @@ T = T + TArray;
 
 % prepare treatment for water
 if exist('wat','var')
-    % if isnan(T_wat + C_wat); wat_evolve = true; else; wat_evolve = false; end
     rp(wat==1) = 0;
-     f(wat==1) = max(f(:)+0.2);
-    wat_surf = diff(wat,1)>0;
-    wat_base = diff(wat,1)<0;
+     f(wat==1) = 1-1e-3;%max(f(:)+0.3);
+    wat_surf   = diff(wat,1)>0;
+    wat_base   = diff(wat,1)<0;
     [jbed, ibed] = find(diff(wat(icz,icx))<0);
 end
 if exist('air','var'); rp(air==1) = 0; end
@@ -246,7 +245,7 @@ while time <= tend && step <= Nt
 
             diff_T = diffus(T,kT,h,[1,2],BC_T);
 
-            eqlb_T = -(T_wat-T_air)./tau_eqlb.*(1-wat);
+            eqlb_T = -(T_wat-T_air)./tau_eqlb.*wat;
 
             dTdt = advn_T + diff_T + eqlb_T;
 
@@ -261,7 +260,7 @@ while time <= tend && step <= Nt
                 res_T(wat==1) = 0;  % set water to isothermal
             end
 
-            T = T - res_T*dt;
+            T = T - res_T*dt/2;
 
             T_wat = mean(T(wat==1),'all');
 
@@ -285,7 +284,7 @@ while time <= tend && step <= Nt
                 res_C(wat==1) = 0;  % set water to isohaline
             end
 
-            C = C - res_C*dt;
+            C = C - res_C*dt/2;
 
             C = max(0,min(1,C));  % saveguard min/max bounds
             C_wat = mean(C(wat==1),'all');
@@ -346,7 +345,9 @@ while time <= tend && step <= Nt
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            resnorm = norm(res_p.*dtau,2)./norm(p(2:end-1,2:end-1)+1e-6,2);
+            resnorm = norm(res_p.*dtau,2)./norm(p(2:end-1,2:end-1)+1e-6,2) ... 
+                    + norm(res_T.*dt/2,2)./norm(T(2:end-1,2:end-1)+1e-6,2) ...
+                    + norm(res_C.*dt/2,2)./norm(C(2:end-1,2:end-1)+1e-6,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);

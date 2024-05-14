@@ -3,7 +3,7 @@ clear; close all; clc;
 par_Lonar_Right_03;
 
 % SET MODEL PARAMETERS
-% runID   = 'Lonar'; % run identifier tag
+runID   = 'Lonar_Right_03_evo'; % run identifier tag
 nout    = 10;       % print output every 'nop' steps
 svout   = 1;        % save figures and data to file (1)
 
@@ -40,7 +40,7 @@ fstruct   =       [f_air, f_wat, f_sed,  f_plb,      f_mlb, f_imr, f_bslt, f_bsm
 Tstruct   =       [T_air, T_wat, T_sed,  T_plb,      T_mlb, T_imr, T_bslt, T_bsmt];   % temperature of structures (nan = do not set)
 Cstruct   =       [C_air, C_wat, C_sed,  C_plb,      C_mlb, C_imr, C_bslt, C_bsmt];   % salinity of structures (nan = do not set)
 
-tol     = 1e-7;      % residual tolerance for iterative solver
+tol     = 1e-8;      % residual tolerance for iterative solver
 alpha   = 1.25;      % step size for iterative solver
 beta    = 0.99;      % damping parameter for iterative solver
 
