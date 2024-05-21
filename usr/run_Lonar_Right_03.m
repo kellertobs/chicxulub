@@ -45,6 +45,6 @@ alpha   = 1.25;      % step size for iterative solver
 beta    = 0.99;      % damping parameter for iterative solver
 
 
-%*****  RUN NAKHLA MODEL  *************************************************
+%*****  RUN CHICXULUB MODEL  *************************************************
 run('../src/main')
 %**************************************************************************

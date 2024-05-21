@@ -7,8 +7,8 @@ runID   = 'Lonar_Right_03'; % run identifier tag
 outdir  = '../out'; % output directory 
 
 % set domain parameters
-N       = 200;      % num. grid size
-M       = N;        % dimensions for depth of pixels in case this ever stops being square
+Nz      = 200;      % num. grid size in z-direction
+Nx      = Nz;       % num. grid size in z-direction
 D       = 1e3;      % phys. domain depth [m]
 
 

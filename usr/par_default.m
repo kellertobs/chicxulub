@@ -9,7 +9,8 @@ svout   = 1;        % save figures and data to file (1)
 bnchm   = 0;        % run benchmark
 
 % set domain parameters
-N       = 200;      % num. grid size
+Nz      = 200;      % num. grid size
+Nx      = 200;      % num. grid size
 D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
@@ -94,6 +95,12 @@ wlay    = 0.02;     % relative width of layer boundary
 % Cstruct   =       [C_wat, C_plb, C_svt, C_sed];   % salinity of structures (nan = do not set)
 % watind = 1;
 % Twat   = 10;
+
+T_air      = 10;
+T_wat      = 10;
+C_wat      = 0.035;
+wat_evolve = false;             % evolve water as well-mixed reservoir; else keep T,C constant
+tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
 
 smth    = 10; % smoothness of initial fields
 

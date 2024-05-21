@@ -2,7 +2,7 @@
 
 fprintf('\n\n')
 fprintf('*************************************************************\n');
-fprintf('*****  RUN CHIXCULUB MODEL | %s  **********\n',datetime('now'));
+fprintf('*****  RUN CHICXULUB MODEL | %s  **********\n',datetime('now'));
 fprintf('*************************************************************\n');
 fprintf('\n   run ID: %s \n\n',runID);
 
@@ -23,26 +23,27 @@ load ocean
 TINY = 1e-16;
 
 % initialise grid coordinates
-h = D./N;                        % grid spacing [m]
-x = linspace(h/2,D-h/2,N);       % x-coordinate vector
-z = linspace(h/2,D-h/2,N);       % z-coordinate vector
+h = D./Nz;                       % grid spacing [m]
+W = D*Nx/Nz;                     % domain width [m]
+x = linspace(h/2,W-h/2,Nx);      % x-coordinate vector
+z = linspace(h/2,D-h/2,Nz);      % z-coordinate vector
 [X,Z] = meshgrid(x,z);           % coordinate arrays
 
 % set ghosted index arrays
 if strcmp(BC_VP{2},'periodic')
-    icx = [N,1:N,1];
-    icz = [1,1:N,N];
+    icx = [Nx,1:Nx,1];
+    icz = [1,1:Nz,Nz];
 else
-    icx = [1,1:N,N];
-    icz = [1,1:N,N];
+    icx = [1,1:Nx,Nx];
+    icz = [1,1:Nz,Nz];
 end
 
 if bnchm; mms; else  % construct manufactured solution if running benchmark [AP: Where is mms defined?]
 
 % initialise smooth random noise
 rng(15); 
-smth = smth*N^2*1e-4;
-rp   = randn(N,N);
+smth = smth*Nz^2*1e-4;
+rp   = randn(Nz,Nx);
 for i = 1:round(smth)
     rp = rp + diffus(rp,ones(size(rp))/8,1,[1,2],{'',BC_VP{2}});
     rp = rp - mean(mean(rp));
@@ -100,14 +101,18 @@ end
 % % % end
 
 % update initial condition within structures
-for i = 1:size(indstruct,3)
-    if ~isnan(fstruct(i)); f = f + indstruct(:,:,i).*fstruct(i); end% + (1-indstruct(:,:,i)).*f; end
-%     if ~isnan(Tstruct(i)); T = indstruct(:,:,i).*Tstruct(i) + (1-indstruct(:,:,i)).*T; end
-    if ~isnan(Cstruct(i)); C = C + indstruct(:,:,i).*Cstruct(i); end% + (1-indstruct(:,:,i)).*C; end
+if exist('indstruct','var')
+    for i = 1:size(indstruct,3)
+        if ~isnan(fstruct(i)); f = f + indstruct(:,:,i).*fstruct(i); end
+        if ~isnan(Tstruct(i)); T = T + indstruct(:,:,i).*Tstruct(i); end
+        if ~isnan(Cstruct(i)); C = C + indstruct(:,:,i).*Cstruct(i); end
+    end
 end
 
-T = T + TArray;
-
+% add temperature loaded from array
+if exist('TArray','var')
+    T = T + TArray;
+end
 
 % prepare treatment for water
 if exist('wat','var')
@@ -116,8 +121,14 @@ if exist('wat','var')
     wat_surf   = diff(wat,1)>0;
     wat_base   = diff(wat,1)<0;
     [jbed, ibed] = find(diff(wat(icz,icx))<0);
+else
+    wat = zeros(Nz,Nx);
 end
-if exist('air','var'); rp(air==1) = 0; end
+if exist('air','var') 
+    rp(air==1) = 0; 
+else
+    air = zeros(Nz,Nx);
+end
 
 % Smoothing function applied to structure indicator to minimise sharp
 for i=1:smth/4
@@ -138,6 +149,9 @@ f = max(1e-3,min(1-1e-3,f));
 T = T + (Ttop-T).*exp(-max(0,Z)/h);
 C = C + (Ctop-C).*exp(-max(0,Z)/h);
 
+res_T = zeros(Nz,Nx);  % residual for temperature equation
+res_C = zeros(Nz,Nx);  % residual for salinity equation
+
 end
 
 % store initial fields
@@ -156,11 +170,17 @@ Kx = (K(:,1:end-1)+K(:,2:end))./2;
 % get iterative step size for p-solution
 dtau = (h/2)^2./K(2:end-1,2:end-1);
 
+% update density difference
+Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
+Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
+Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+if bnchm; Drhoz = Drho_mms(:,:,step+1); end
+
 % prepare solution & residual arrays for VP solver
-w = zeros(N+1,N+2);   % vertical Darcy speed
-u = zeros(N+2,N+1);   % horizontal Darcy speed
-p = zeros(N+2,N+2);   % pore fluid pressure
-res_p = zeros(N,N)./dtau;  % residual for pressure equation
+w = zeros(Nz+1,Nx+2);   % vertical Darcy speed
+u = zeros(Nz+2,Nx+1);   % horizontal Darcy speed
+p = zeros(Nz+2,Nx+2);   % pore fluid pressure
+res_p = zeros(Nz,Nx)./dtau;  % residual for pressure equation
 
 
 %% PLOT INITIAL CONDITIONS
@@ -237,7 +257,7 @@ while time <= tend && step <= Nt
 
     while resnorm >= tol && it <= maxit || it <= 100 
         
-        if ~mod(it,nup)
+        if ~mod(it,nup) && step>0
 
             % UPDATE TEMPERATURE SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -262,7 +282,7 @@ while time <= tend && step <= Nt
 
             T = T - res_T*dt/2;
 
-            T_wat = mean(T(wat==1),'all');
+            if wat_evolve;  T_wat = mean(T(wat==1),'all');  end
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -287,7 +307,7 @@ while time <= tend && step <= Nt
             C = C - res_C*dt/2;
 
             C = max(0,min(1,C));  % saveguard min/max bounds
-            C_wat = mean(C(wat==1),'all');
+            if wat_evolve;  C_wat = mean(C(wat==1),'all');  end
 
             % update density difference
             Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
