@@ -53,8 +53,8 @@ T1      = Tbot;     % base initial temperature [C]
 dT      = -5;       % perturbation amplitude [C]
 
 Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
-Ctop    = 0;        % top boundary concentration [wt]
-Cbot    = 0.001;    % base boundary concentration [wt]
+Ctop    = 0.0;      % top boundary concentration [wt]
+Cbot    = 0.01;     % base boundary concentration [wt]
 C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
 dC      = 5.e-4;    % perturbation amplitude [wt]
@@ -106,6 +106,6 @@ C_bsmt = 0.01;    % Basement salinity
 smth    = 10; % smoothness of initial fields
 
 % set boundary conditions
-BC_T    = {'closed','closed'};
+BC_T    = {'flux','closed'};
 BC_C    = {'closed','closed'};
 BC_VP   = {'open','closed'};

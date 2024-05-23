@@ -108,7 +108,21 @@ fp  = circshift(f, -  shift);
 
 % if the boundary is closed or constant value
 if ~strcmp(BC,'periodic') && size(f,dim)>1
-    if ischar(BC)
+    if strcmp(BC,'flux')
+        if dim==1
+            fm (1  ,:,:) =  2*f( 1 ,:,:)-f( 2   ,:,:);
+            fp (end,:,:) =  2*f(end,:,:)-f(end-1,:,:);
+
+        elseif dim==2
+            fm (:,1  ,:) =  2*f(:, 1 ,:)-f(:, 2   ,:);
+            fp (:,end,:) =  2*f(:,end,:)-f(:,end-1,:);
+
+        elseif dim==3
+            fm (:,:,1  ) =  2*f(:,:, 1 )-f(:,:, 2   );
+            fp (:,:,end) =  2*f(:,:,end)-f(:,:,end-1);
+
+        end
+    elseif ischar(BC)
         if dim==1
             fm (1  ,:,:) =  f( 1 ,:,:);
             fp (end,:,:) =  f(end,:,:);

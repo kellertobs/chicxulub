@@ -117,7 +117,9 @@ end
 % prepare treatment for water
 if exist('wat','var')
     rp(wat==1) = 0;
-     f(wat==1) = 1-1e-3;%max(f(:)+0.3);
+    f (wat==1) = 1-1e-3;
+    T (wat==1) = T_wat;
+    C (wat==1) = C_wat;
     wat_surf   = diff(wat,1)>0;
     wat_base   = diff(wat,1)<0;
     [jbed, ibed] = find(diff(wat(icz,icx))<0);
@@ -125,7 +127,10 @@ else
     wat = zeros(Nz,Nx);
 end
 if exist('air','var') 
-    rp(air==1) = 0; 
+    rp(air==1) = 0;
+    f (air==1) = 1e-3;
+    T (air==1) = T_air;
+    C (air==1) = 0;
 else
     air = zeros(Nz,Nx);
 end
