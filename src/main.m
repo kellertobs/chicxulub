@@ -56,8 +56,6 @@ switch finit  % initial porosity
         f = f0 + (f1-f0) .* Z/D;
     case 'layer'
         f = f0 + (f1-f0) .* (1+erf((Z/D-zlay)/wlay))/2;
-    case 'array'
-        f = fArray;
 end
 switch Tinit  % initial temperature
     case 'linear'
@@ -111,7 +109,13 @@ end
 
 % add temperature loaded from array
 if exist('TArray','var')
+    f = f + fArray;
+end
+if exist('TArray','var')
     T = T + TArray;
+end
+if exist('TArray','var')
+    C = C + CArray;
 end
 
 % prepare treatment for water
