@@ -21,8 +21,11 @@ rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
 kT      = 1e-6;     % thermal diffusivity [m2/s]
+kV      = 1e-7;     % vapour bubble diffusivity [m2/s]
 aT      = 1e-4;     % thermal expansivity [1/K]
-gC      = 1.1;      % chemical expansivity [1/wt]
+aC      = 1.1;      % chemical expansivity [1/wt]
+aV      = 0.90;     % vapour-liquid density contrast [1/wt]
+LH      = 2260e3/4200; % temperature jump from latent heat of vapourisation [J/kg]
 
 % set initial condition parameters
 finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'

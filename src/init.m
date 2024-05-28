@@ -143,6 +143,12 @@ C = C + (Ctop-C).*exp(-max(0,Z)/h);
 res_T = zeros(Nz,Nx);  % residual for temperature equation
 res_C = zeros(Nz,Nx);  % residual for salinity equation
 
+% initialise vapour phase
+Plith = 2600.*grav.*Z;
+Tv = 100 + 275/2.15e7 .* Plith;
+Vq = (1 + tanh((T-Tv)./5))/2; V = Vq;
+phsr_V = 0.*V;
+
 end
 
 % store initial fields
@@ -162,7 +168,9 @@ Kx = (K(:,1:end-1)+K(:,2:end))./2;
 dtau = (h/2)^2./K(2:end-1,2:end-1);
 
 % update density difference
-Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
+Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) ...
+                + aC.*(C(icz,icx)-mean(C(icz,:),2)) ...
+                - aV.*(V(icz,icx)-mean(V(icz,:),2)) );
 Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
 Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 if bnchm; Drhoz = Drho_mms(:,:,step+1); end
@@ -173,6 +181,13 @@ u = zeros(Nz+2,Nx+1);   % horizontal Darcy speed
 p = zeros(Nz+2,Nx+2);   % pore fluid pressure
 res_p = zeros(Nz,Nx)./dtau;  % residual for pressure equation
 
+% initialise timing parameters
+dTdt = 0.*T;
+dCdt = 0.*C;
+dVdt = 0.*V;
+dt   = 0;
+step = 0;
+time = 0;
 
 %% PLOT INITIAL CONDITIONS
 
@@ -203,8 +218,8 @@ set(fh1, 'CurrentAxes', ax(1))
 imagesc(x,z,f); axis equal tight; box on; cb = colorbar;
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
 set(fh1, 'CurrentAxes', ax(2))
-imagesc(x,z,log10(k)); axis equal tight; box on; cb = colorbar;
-set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Permeability [log$_{10}$ m$^2$]',TX{:},FS{:})
+imagesc(x,z,V); axis equal tight; box on; cb = colorbar;
+set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 set(fh1, 'CurrentAxes', ax(3))
 imagesc(x,z,T); axis equal tight;  box on; cb = colorbar;
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})

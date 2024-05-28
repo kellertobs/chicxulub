@@ -52,8 +52,8 @@ if ~mod(step,nout)
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(6))
-    imagesc(x,z,Drho(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
-    set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Density contrast [kg/m$^3$]',TX{:},FS{:})
+    imagesc(x,z,V(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
+    set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 
     % print figure to file

@@ -24,13 +24,6 @@ init;
 
 %% TIME STEPPING LOOP      
 
-% initialise timing parameters
-dTdt = 0.*T;
-dCdt = 0.*C;
-dt   = 0;
-step = 0;
-time = 0;
-
 
 while time <= tend && step <= Nt      
 
@@ -42,8 +35,10 @@ while time <= tend && step <= Nt
     % store previous rates of change
     To    = T;
     Co    = C;
+    Vo    = V;
     dTdto = dTdt;
     dCdto = dCdt;
+    dVdto = dVdt;
 
     resnorm = 1e6;
     pi    = p;
@@ -64,7 +59,7 @@ while time <= tend && step <= Nt
 
             eqlb_T = -(T_wat-T_air)./tau_eqlb.*wat;
 
-            dTdt = advn_T + diff_T + eqlb_T;
+            dTdt = advn_T + diff_T + eqlb_T - phsr_V*LH;
 
             if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
 
@@ -77,7 +72,7 @@ while time <= tend && step <= Nt
                 res_T(wat==1) = 0;  % set water to isothermal
             end
 
-            T = T - res_T*dt/2;
+            T = T - res_T*dt/4;
 
             if wat_evolve;  T_wat = mean(T(wat==1),'all');  end
 
@@ -101,13 +96,41 @@ while time <= tend && step <= Nt
                 res_C(wat==1) = 0;  % set water to isohaline
             end
 
-            C = C - res_C*dt/2;
+            C = C - res_C*dt/4;
 
             C = max(0,min(1,C));  % saveguard min/max bounds
             if wat_evolve;  C_wat = mean(C(wat==1),'all');  end
 
+
+            % UPDATE VAPOUR SOLUTION (SEMI-IMPLICIT UPDATE)
+            
+            % calculate vapour advection
+            advn_V = - advect(V,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_V);
+
+            diff_V = diffus(V,kV,h,[1,2],BC_V);
+
+            Vq = (1 + tanh((T-Tv)./5))/2;
+
+            phsr_V = -(V - Vq)./5/(dt+TINY);
+
+            dVdt = advn_V + diff_V + phsr_V;
+
+            if bnchm; dVdt = dVdt + src_V_mms(:,:,step+1); end
+
+            res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
+
+            res_V(air==1) = 0;  % set air to no vapour
+            res_V(wat==1) = 0;  % set water no vapour
+
+            V = V - res_V*dt/4;
+
+            V = max(0,min(1,V));  % saveguard min/max bounds
+
+
             % update density difference
-            Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) + gC.*(C(icz,icx)-mean(C(icz,:),2)));
+            Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) ...
+                            + aC.*(C(icz,icx)-mean(C(icz,:),2)) ...
+                            - aV.*(V(icz,icx)-mean(V(icz,:),2)) );
             Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
             if bnchm; Drhoz = Drho_mms(:,:,step+1); end

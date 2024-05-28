@@ -108,4 +108,5 @@ smth    = 3; % smoothness of initial fields
 % set boundary conditions
 BC_T    = {{'flux',[0,0.03]},'closed'};
 BC_C    = {'closed','closed'};
+BC_V    = {'closed','closed'};
 BC_VP   = {'closed','closed'};
