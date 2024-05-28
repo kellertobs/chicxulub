@@ -36,19 +36,19 @@ function [dff,qz,qx] = diffus(f, k, h, dim, BC)
 % -------------------------------------------------------------------------
 
 % collect information on the dimensions and BCs corresponding to (z,x)
-zdim = dim(1);  zBC = BC{1};
-xdim = dim(2);  xBC = BC{2};
+zdim = dim(1);  if iscell(BC{1}); zBC = BC{1}{1};  zBCval = BC{1}{2}; else; zBC = BC{1}; zBCval = []; end
+xdim = dim(2);  if iscell(BC{2}); xBC = BC{2}{1};  xBCval = BC{2}{2}; else; xBC = BC{2}; xBCval = []; end
 
 % cell-centered values
 fcc = f;
 kcc = k;
 
 % centered differences, prone to num dispersion
-[fxm, fxp] = makestencil(f, xdim, xBC);
-[fzm, fzp] = makestencil(f, zdim, zBC);
+[fxm, fxp] = makestencil(f, h, xdim, xBC, xBCval);
+[fzm, fzp] = makestencil(f, h, zdim, zBC, zBCval);
 
-[kxm, kxp] = makestencil(k, xdim, xBC);
-[kzm, kzp] = makestencil(k, zdim, zBC);
+[kxm, kxp] = makestencil(k, h, xdim, xBC, xBCval);
+[kzm, kzp] = makestencil(k, h, zdim, zBC, zBCval);
 
 % get diffusive fluxes  q = - k grad(f)
 qxp = - (kxp + kcc)/2 .* (fxp - fcc)/h;
@@ -86,7 +86,7 @@ end
 
 %%  utility function
 
-function [fm, fp] = makestencil (f, dim, BC)
+function [fm, fp] = makestencil (f, h, dim, BC, BCval)
 %
 % makes stencil for calculating differences
 % use circshift which is faster than slicing
@@ -110,16 +110,16 @@ fp  = circshift(f, -  shift);
 if ~strcmp(BC,'periodic') && size(f,dim)>1
     if strcmp(BC,'flux')
         if dim==1
-            fm (1  ,:,:) =  2*f( 1 ,:,:)-f( 2   ,:,:);
-            fp (end,:,:) =  2*f(end,:,:)-f(end-1,:,:);
+            fm (1  ,:,:) =  f( 1 ,:,:)-BCval(1)*h;
+            fp (end,:,:) =  f(end,:,:)+BCval(2)*h;
 
         elseif dim==2
-            fm (:,1  ,:) =  2*f(:, 1 ,:)-f(:, 2   ,:);
-            fp (:,end,:) =  2*f(:,end,:)-f(:,end-1,:);
+            fm (:,1  ,:) =  f(:, 1 ,:)-BCval(1)*h;
+            fp (:,end,:) =  f(:,end,:)+BCval(2)*h;
 
         elseif dim==3
-            fm (:,:,1  ) =  2*f(:,:, 1 )-f(:,:, 2   );
-            fp (:,:,end) =  2*f(:,:,end)-f(:,:,end-1);
+            fm (:,:,1  ) =  f(:,:, 1 )-BCval(1)*h;
+            fp (:,:,end) =  f(:,:,end)+BCval(2)*h;
 
         end
     elseif ischar(BC)

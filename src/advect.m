@@ -50,8 +50,8 @@ function [adv, advscl] = advect (f, u, w, h, scheme, dim, BC)
 % -------------------------------------------------------------------------
 
 % collect information on the dimensions and BCs corresponding to (z,x)
-zdim = dim(1);  zBC = BC{1};
-xdim = dim(2);  xBC = BC{2};
+zdim = dim(1);  if iscell(BC{1}); zBC = BC{1}{1};  zBCval = BC{1}{2}; else; zBC = BC{1}; zBCval = []; end
+xdim = dim(2);  if iscell(BC{2}); xBC = BC{2}{1};  xBCval = BC{2}{2}; else; xBC = BC{2}; xBCval = []; end
 
 % collect velocities on - (m) and + (p) faces
 [umpos, umneg, uppos, upneg] = facevels(u, xdim);
@@ -65,8 +65,8 @@ fcc = f;
 switch scheme{1}
     case 'centr'
         % centered differences, prone to num dispersion
-        [fxm, fxp] = makestencil(f, xdim, xBC);
-        [fzm, fzp] = makestencil(f, zdim, zBC);
+        [fxm, fxp] = makestencil(f, xdim, xBC, xBCval);
+        [fzm, fzp] = makestencil(f, zdim, zBC, zBCval);
         
         fxppos = (fcc+fxp)./2;      fxpneg = (fcc+fxp)./2;
         fxmpos = (fcc+fxm)./2;      fxmneg = (fcc+fxm)./2;
@@ -76,8 +76,8 @@ switch scheme{1}
     case 'upwd1'
         % upwind differences, prone to num diffusion
         % flux conservative approach, split velocities into + and -
-        [fxm, fxp] = makestencil(f, xdim, xBC);
-        [fzm, fzp] = makestencil(f, zdim, zBC);
+        [fxm, fxp] = makestencil(f, xdim, xBC, xBCval);
+        [fzm, fzp] = makestencil(f, zdim, zBC, zBCval);
         
         fxppos = fcc;      fxpneg = fxp;
         fxmpos = fxm;      fxmneg = fcc;
@@ -87,8 +87,8 @@ switch scheme{1}
     case 'quick'
         % quick scheme == 3rd order upwind
         % flux conservative approach, split velocities into + and -
-        [fxm, fxp, fmmx, fppx] = makestencil(f, xdim, xBC);
-        [fzm, fzp, fmmz, fppz] = makestencil(f, zdim, zBC);
+        [fxm, fxp, fmmx, fppx] = makestencil(f, xdim, xBC, xBCval);
+        [fzm, fzp, fmmz, fppz] = makestencil(f, zdim, zBC, zBCval);
         
         fxppos = (2*fxp + 5*fcc - fxm )./6;      fxpneg = (2*fcc + 5*fxp - fppx)./6;
         fxmpos = (2*fcc + 5*fxm - fmmx)./6;      fxmneg = (2*fxm + 5*fcc - fxp )./6;
@@ -97,8 +97,8 @@ switch scheme{1}
         
     case 'fromm'
         % Fromm scheme
-        [fxm, fxp, fmmx, fppx] = makestencil(f, xdim, xBC);
-        [fzm, fzp, fmmz, fppz] = makestencil(f, zdim, zBC);
+        [fxm, fxp, fmmx, fppx] = makestencil(f, xdim, xBC, xBCval);
+        [fzm, fzp, fmmz, fppz] = makestencil(f, zdim, zBC, zBCval);
         
         fxppos = fcc + (fxp-fxm )./4;      fxpneg = fxp + (fcc-fppx)./4;
         fxmpos = fxm + (fcc-fmmx)./4;      fxmneg = fcc + (fxm-fxp )./4;
@@ -107,18 +107,18 @@ switch scheme{1}
         
     case 'weno3'
         % 3rd order WENO from Jiang & Shu 1996, J Comp Physics
-        [fxppos, fxpneg, fxmpos, fxmneg] = weno3(fcc, xdim, xBC);
-        [fzppos, fzpneg, fzmpos, fzmneg] = weno3(fcc, zdim, zBC);
+        [fxppos, fxpneg, fxmpos, fxmneg] = weno3(fcc, xdim, xBC, xBCval);
+        [fzppos, fzpneg, fzmpos, fzmneg] = weno3(fcc, zdim, zBC, zBCval);
         
     case 'weno5'
         % 5th order WENO from Jiang & Shu 1996, J Comp Physics
-        [fxppos, fxpneg, fxmpos, fxmneg] = weno5(fcc, xdim, xBC);
-        [fzppos, fzpneg, fzmpos, fzmneg] = weno5(fcc, zdim, zBC);
+        [fxppos, fxpneg, fxmpos, fxmneg] = weno5(fcc, xdim, xBC, xBCval);
+        [fzppos, fzpneg, fzmpos, fzmneg] = weno5(fcc, zdim, zBC, zBCval);
         
     case 'tvdim'
         % total variation diminishing approach from Sramek et al. 2010, GJI
-        [fxppos, fxpneg, fxmpos, fxmneg] = tvd(fcc, umpos, umneg, uppos, upneg, xdim, xBC);
-        [fzppos, fzpneg, fzmpos, fzmneg] = tvd(fcc, wmpos, wmneg, wppos, wpneg, zdim, zBC);
+        [fxppos, fxpneg, fxmpos, fxmneg] = tvd(fcc, umpos, umneg, uppos, upneg, xdim, xBC, xBCval);
+        [fzppos, fzpneg, fzmpos, fzmneg] = tvd(fcc, wmpos, wmneg, wppos, wpneg, zdim, zBC, zBCval);
 end
 
 
@@ -163,7 +163,7 @@ end
 
 
 
-function [fm, fp, fmm, fpp, fmmm, fppp] = makestencil (f, dim, BC)
+function [fm, fp, fmm, fpp, fmmm, fppp] = makestencil (f, dim, BC, BCval)
 %
 % makes stencil for calculating differences
 % use circshift which is faster than slicing
@@ -194,39 +194,7 @@ end
 % if the boundary is closed or open (could use more elegance)
 % but i wanted to be able to handle any specified dimension
 if ~strcmp(BC,'periodic') && size(f,dim)>1
-    if ischar(BC)
-        if dim==1
-            fmm(    1:2  ,:,:) = repmat(f( 1 ,:,:),2,1,1);
-            fm (    1    ,:,:) =        f( 1 ,:,:);
-            fp (      end,:,:) =        f(end,:,:);
-            fpp(end-1:end,:,:) = repmat(f(end,:,:),2,1,1);
-
-            if (sten7)
-                fmmm(    1:3  ,:,:) = repmat(f( 1 ,:,:),3,1,1);
-                fppp(end-2:end,:,:) = repmat(f(end,:,:),3,1,1);
-            end
-        elseif dim==2
-            fmm(:,    1:2  ,:) = repmat(f(:, 1 ,:),1,2,1);
-            fm (:,    1    ,:) =        f(:, 1 ,:);
-            fp (:,      end,:) =        f(:,end,:);
-            fpp(:,end-1:end,:) = repmat(f(:,end,:),1,2,1);
-
-            if (sten7)
-                fmmm(:,    1:3  ,:) = repmat(f(:, 1 ,:),1,3,1);
-                fppp(:,end-2:end,:) = repmat(f(:,end,:),1,3,1);
-            end
-        elseif dim==3
-            fmm(:,:,    1:2  ) = repmat(f(:,:, 1 ),1,1,2);
-            fm (:,:,    1    ) =        f(:,:, 1 );
-            fp (:,:,      end) =        f(:,:,end);
-            fpp(:,:,end-1:end) = repmat(f(:,:,end),1,1,2);
-
-            if (sten7)
-                fmmm(:,:,    1:3  ) = repmat(f(:,:, 1 ),1,1,3);
-                fppp(:,:,end-2:end) = repmat(f(:,:,end),1,1,3);
-            end
-        end
-    else
+    if ~ischar(BC)
         if dim==1
             fmm(    1:2  ,:,:) = BC(1);
             fm (    1    ,:,:) = BC(1);
@@ -258,6 +226,38 @@ if ~strcmp(BC,'periodic') && size(f,dim)>1
                 fppp(:,:,end-2:end) = BC(2);
             end
         end
+    else
+        if dim==1
+            fmm(    1:2  ,:,:) = repmat(f( 1 ,:,:),2,1,1);
+            fm (    1    ,:,:) =        f( 1 ,:,:);
+            fp (      end,:,:) =        f(end,:,:);
+            fpp(end-1:end,:,:) = repmat(f(end,:,:),2,1,1);
+
+            if (sten7)
+                fmmm(    1:3  ,:,:) = repmat(f( 1 ,:,:),3,1,1);
+                fppp(end-2:end,:,:) = repmat(f(end,:,:),3,1,1);
+            end
+        elseif dim==2
+            fmm(:,    1:2  ,:) = repmat(f(:, 1 ,:),1,2,1);
+            fm (:,    1    ,:) =        f(:, 1 ,:);
+            fp (:,      end,:) =        f(:,end,:);
+            fpp(:,end-1:end,:) = repmat(f(:,end,:),1,2,1);
+
+            if (sten7)
+                fmmm(:,    1:3  ,:) = repmat(f(:, 1 ,:),1,3,1);
+                fppp(:,end-2:end,:) = repmat(f(:,end,:),1,3,1);
+            end
+        elseif dim==3
+            fmm(:,:,    1:2  ) = repmat(f(:,:, 1 ),1,1,2);
+            fm (:,:,    1    ) =        f(:,:, 1 );
+            fp (:,:,      end) =        f(:,:,end);
+            fpp(:,:,end-1:end) = repmat(f(:,:,end),1,1,2);
+
+            if (sten7)
+                fmmm(:,:,    1:3  ) = repmat(f(:,:, 1 ),1,1,3);
+                fppp(:,:,end-2:end) = repmat(f(:,:,end),1,1,3);
+            end
+        end
     end
 end
 end
@@ -267,9 +267,9 @@ end
 
 %% weno3 functions
 
-function [fppos, fpneg, fmpos, fmneg] = weno3 (f, dim, BC)
+function [fppos, fpneg, fmpos, fmneg] = weno3 (f, dim, BC, BCval)
 
-[fm, fp, fmm, fpp] = makestencil(f, dim, BC);
+[fm, fp, fmm, fpp] = makestencil(f, dim, BC, BCval);
 
 % for the p (i+1/2) face
 fppos = makeweno3poly( fm, f, fp);   % +flux upwind polynomials
@@ -305,9 +305,9 @@ end
 
 %% weno5 functions
 
-function [fppos, fpneg, fmpos, fmneg] = weno5 (f, dim, BC)
+function [fppos, fpneg, fmpos, fmneg] = weno5 (f, dim, BC, BCval)
 
-[fm, fp, fmm, fpp, fmmm, fppp] = makestencil(f, dim, BC);
+[fm, fp, fmm, fpp, fmmm, fppp] = makestencil(f, dim, BC, BCval);
 
 % for the p (i+1/2) face
 fppos = makeweno5poly(fmm ,  fm, f, fp, fpp);    % +flux upwind polynomials
@@ -348,13 +348,13 @@ end
 %% tvd function
 % total variation diminishing approach as described in Sramek 2010
 
-function [fppos, fpneg, fmpos, fmneg] = tvd (f, vmpos, vmneg, vppos, vpneg, dim, BC)
+function [fppos, fpneg, fmpos, fmneg] = tvd (f, vmpos, vmneg, vppos, vpneg, dim, BC, BCval)
 
-[fm, fp, fmm, fpp] = makestencil(f, dim, BC);
+[fm, fp, fmm, fpp] = makestencil(f, dim, BC, BCval);
 
 % we need extra velocity terms from one cell upwind
-[vmmpos   ] = makestencil(vmpos, dim, BC);
-[~, vppneg] = makestencil(vpneg, dim, BC);
+[vmmpos   ] = makestencil(vmpos, dim, BC, BCval);
+[~, vppneg] = makestencil(vpneg, dim, BC, BCval);
 
 % for the p (i+1/2) face
 fppos = gettvdflux( fm, f , fp,  vmpos, vppos);    % +flux
