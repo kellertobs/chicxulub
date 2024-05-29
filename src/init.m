@@ -145,8 +145,8 @@ res_C = zeros(Nz,Nx);  % residual for salinity equation
 
 % initialise vapour phase
 Plith = 2600.*grav.*Z;
-Tv = 100 + 275/2.15e7 .* Plith;
-Vq = (1 + tanh((T-Tv)./5))/2; V = Vq;
+Vq = vapour(T,C,Plith);
+V  = Vq;
 phsr_V = 0.*V;
 
 end

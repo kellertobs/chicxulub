@@ -109,7 +109,7 @@ while time <= tend && step <= Nt
 
             diff_V = diffus(V,kV,h,[1,2],BC_V);
 
-            Vq = (1 + tanh((T-Tv)./5))/2;
+            Vq = vapour(T,C,Plith);
 
             phsr_V = -(V - Vq)./5/(dt+TINY);
 
@@ -120,7 +120,11 @@ while time <= tend && step <= Nt
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
             res_V(air==1) = 0;  % set air to no vapour
-            res_V(wat==1) = 0;  % set water no vapour
+            if wat_evolve
+                res_V(wat==1) = mean(res_V(wat==1),'all');   % set water to evolving reservoir
+            else
+                res_V(wat==1) = 0;  % set water to no vapour
+            end
 
             V = V - res_V*dt/4;
 
