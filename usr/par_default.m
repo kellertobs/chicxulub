@@ -114,11 +114,11 @@ BC_VP   = {'open','closed'};
 
 % set model timing parameters
 tend    = 1e11;      % model stopping time [s]
-Nt      = 1e4;       % max number of time step
+Nt      = 1e5;       % max number of time step
 
 
 % set numerical solver parameters
-CFL     = 0.75;      % Courant-Friedrich-Lewy number to limit time step size
+CFL     = 1.0;       % Courant-Friedrich-Lewy number to limit time step size
 ADVN    = 'weno5';   % advection scheme
 nup     = 100;       % update TC-solution and check residuals every nup iter
 tol     = 1e-9;      % residual tolerance for iterative solver

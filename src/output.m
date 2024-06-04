@@ -32,27 +32,63 @@ if ~mod(step,nout)
     sgtitle(sprintf('Time elapsed %.3f yr', time/3600/24/365.25),TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(1))
-    imagesc(x,z,-w(2:end-1,:).*3600); axis equal tight; box on; cb = colorbar;
+    imagesc(x,z,-w(2:end-1,:).*3600); axis equal tight; box on; cb = colorbar; hold on;
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(-w(:).*3600),max(-w(:).*3600)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation z-speed [m/hr]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(2))
-    imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar;
+    imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar; hold on;
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(u(:).*3600),max(u(:).*3600)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation x-speed [m/hr]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(3))
-    imagesc(x,z,p(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
+    imagesc(x,z,p(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on;
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(p(:)),max(p(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Dynamic fluid pressure [Pa]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(4))
-    imagesc(x,z,T(2:end-1,2:end-1)); axis equal tight; box on; cb = colorbar;
+    imagesc(x,z,T(2:end-1,2:end-1)); axis equal tight; box on; cb = colorbar; hold on
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(T(:)),max(T(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(5))
-    imagesc(x,z,C(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
+    imagesc(x,z,C(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on;
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(C(:)),max(C(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(6))
-    imagesc(x,z,V(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar;
+    imagesc(x,z,V(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on
+    if exist('indstruct','var')
+        for i = 1:size(indstruct,3)
+            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+        end
+    end
+    clim([min(V(:)),max(V(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 

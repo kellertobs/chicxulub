@@ -50,10 +50,10 @@ Ttop    = 0;        % top boundary temperature
 Tbot    = 30;       % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
-dT      = -10;       % perturbation amplitude [C]
+dT      = -1;       % perturbation amplitude [C]
 
 Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
-Ctop    = 0.0;      % top boundary concentration [wt]
+Ctop    = 0.001;    % top boundary concentration [wt]
 Cbot    = 0.01;     % base boundary concentration [wt]
 C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
@@ -63,39 +63,39 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 % Lithology parameters
 f_svt = 0.3;      % Suevite porosity
 T_svt = 600;      % Suevite Temperature
-C_svt = 0.01;     % Suevite salinity
+C_svt = 0.0;      % Suevite salinity
 
 f_plb = 0.2;      % Polymict Lithic Breccia porosity
 T_plb = 400;      % Polymict Lithic Breccia Temperature
-C_plb = 0.01;     % Polymict Lithic Breccia salinity
+C_plb = 0.0;      % Polymict Lithic Breccia salinity
 
 f_mlb = 0.1;      % Monomict Lithic Breccia porosity
 T_mlb = 400;      % Monomict Lithic Breccia Temperature
-C_mlb = 0.01;     % Monomict Lithic Breccia salinity
+C_mlb = 0.0;      % Monomict Lithic Breccia salinity
 
 f_imr = 0.05;     % Impact Melt Rock porosity
 T_imr = 900;      % Impact Melt Rock Temperature
-C_imr = 0.01;     % Impact Melt Rock salinity
+C_imr = 0.05;     % Impact Melt Rock salinity
 
-f_sed =  0.2;     % Sediment porosity (volume fraction) 
+f_sed =  0.25;    % Sediment porosity (volume fraction) 
 T_sed =  100;     % Sediment Temperature
-C_sed =  0.01;    % Sediment salinity (wt fraction)
+C_sed =  0.0;     % Sediment salinity (wt fraction)
 
-f_wat =  0.0;     % Water porosity
+f_wat =  1.0;     % Water porosity
 T_wat =  10;      % Water Temperature (set to nan to evolve as mixed reservoir)
 C_wat =  0.035;   % Water salinity (wt fraction, sea water is 3.5% (0.035), set to nan to evolve as mixed reservoir)
 
-f_air =  0.00;    % Air porosity
+f_air =  0.0;     % Air porosity
 T_air =  10;      % Air Temperature (will remain constant)
-C_air =  0.00;    % Air salinity (wt fraction, set to 0, will remain constant)
+C_air =  0.0;     % Air salinity (wt fraction, set to 0, will remain constant)
 
-f_bslt = 0.05;    % Basalt porosity
+f_bslt = 0.07;    % Basalt porosity
 T_bslt = 100;     % Basalt Temperature 
-C_bslt = 0.01;    % Basalt salinity
+C_bslt = 0.0;     % Basalt salinity
 
 f_bsmt = 0.05;    % Basement porosity
 T_bsmt = 200;     % Basement Temperature 
-C_bsmt = 0.01;    % Basement salinity 
+C_bsmt = 0.0;     % Basement salinity 
 
 
 % indstruct = cat(3,   wat,   sed,   cbrc,   bslt_pdr,  mbrc,   bslt,   bsmt);   % Name and order of structures

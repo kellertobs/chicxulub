@@ -72,9 +72,10 @@ while time <= tend && step <= Nt
                 res_T(wat==1) = 0;  % set water to isothermal
             end
 
-            T = T - res_T*dt/4;
+            T = T - res_T*dt/5;
 
-            if wat_evolve;  T_wat = mean(T(wat==1),'all');  end
+            if wat_evolve;  T_wat     = mean(T(wat==1),'all');  
+            else;           T(wat==1) = T_wat; end
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -96,10 +97,11 @@ while time <= tend && step <= Nt
                 res_C(wat==1) = 0;  % set water to isohaline
             end
 
-            C = C - res_C*dt/4;
+            C = C - res_C*dt/5;
 
             C = max(0,min(1,C));  % saveguard min/max bounds
-            if wat_evolve;  C_wat = mean(C(wat==1),'all');  end
+            if wat_evolve;  C_wat = mean(C(wat==1),'all');
+            else;           C(wat==1) = C_wat; end
 
 
             % UPDATE VAPOUR SOLUTION (SEMI-IMPLICIT UPDATE)
@@ -126,16 +128,19 @@ while time <= tend && step <= Nt
                 res_V(wat==1) = 0;  % set water to no vapour
             end
 
-            V = V - res_V*dt/4;
+            V = V - res_V*dt/5;
 
             V = max(0,min(1,V));  % saveguard min/max bounds
+            if wat_evolve;  V_wat = mean(V(wat==1),'all'); 
+            else;           V(wat==1) = 0; end
 
 
             % update density difference
-            Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) ...
-                            + aC.*(C(icz,icx)-mean(C(icz,:),2)) ...
-                            - aV.*(V(icz,icx)-mean(V(icz,:),2)) );
+            Drho  = rhol0.*(- aT.*(T(icz,icx)-0*mean(T(icz,:),2)) ...
+                            + aC.*(C(icz,icx)-0*mean(C(icz,:),2)) ...
+                            - aV.*(V(icz,icx)-0*mean(V(icz,:),2)) );
             Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
+            Drho = Drho - mean(Drho(icz,:),2);
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
             if bnchm; Drhoz = Drho_mms(:,:,step+1); end
         end

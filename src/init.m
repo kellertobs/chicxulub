@@ -103,7 +103,7 @@ end
 % prepare treatment for water
 if exist('wat','var')
     rp(wat==1) = 0;
-    f (wat==1) = 1-1e-3;
+    f (wat==1) = 0.5;
     T (wat==1) = T_wat;
     C (wat==1) = C_wat;
     wat_surf   = diff(wat,1)>0;
@@ -111,14 +111,6 @@ if exist('wat','var')
     [jbed, ibed] = find(diff(wat(icz,icx))<0);
 else
     wat = zeros(Nz,Nx);
-end
-if exist('air','var') 
-    rp(air==1) = 0;
-    f (air==1) = 1e-3;
-    T (air==1) = T_air;
-    C (air==1) = 0;
-else
-    air = zeros(Nz,Nx);
 end
 
 % Smoothing function applied to structure indicator to minimise sharp
@@ -132,6 +124,15 @@ end
 f = f + df.*rp;
 T = T + dT.*rp;
 C = C + dC.*rp;
+
+if exist('air','var') 
+    rp(air==1) = 0;
+    f (air==1) = 1e-3;
+    T (air==1) = T_air;
+    C (air==1) = 0;
+else
+    air = zeros(Nz,Nx);
+end
 
 % enforce bounds on porosity
 f = max(1e-3,min(1-1e-3,f));
@@ -168,10 +169,11 @@ Kx = (K(:,1:end-1)+K(:,2:end))./2;
 dtau = (h/2)^2./K(2:end-1,2:end-1);
 
 % update density difference
-Drho  = rhol0.*(- aT.*(T(icz,icx)-mean(T(icz,:),2)) ...
-                + aC.*(C(icz,icx)-mean(C(icz,:),2)) ...
-                - aV.*(V(icz,icx)-mean(V(icz,:),2)) );
+Drho  = rhol0.*(- aT.*(T(icz,icx)-0*mean(T(icz,:),2)) ...
+                + aC.*(C(icz,icx)-0*mean(C(icz,:),2)) ...
+                - aV.*(V(icz,icx)-0*mean(V(icz,:),2)) );
 Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
+Drho = Drho - mean(Drho(icz,:),2);
 Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 if bnchm; Drhoz = Drho_mms(:,:,step+1); end
 
@@ -215,15 +217,42 @@ ax(3) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+1*axh+1*avs axw axh]);
 ax(4) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
 
 set(fh1, 'CurrentAxes', ax(1))
-imagesc(x,z,f); axis equal tight; box on; cb = colorbar;
+imagesc(x,z,f); axis equal tight; box on; cb = colorbar; hold on
+if exist('indstruct','var')
+    for i = 1:size(indstruct,3)
+        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    end
+end
+clim([min(f(:)),max(f(:))])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
+
 set(fh1, 'CurrentAxes', ax(2))
-imagesc(x,z,V); axis equal tight; box on; cb = colorbar;
-set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
-set(fh1, 'CurrentAxes', ax(3))
-imagesc(x,z,T); axis equal tight;  box on; cb = colorbar;
-set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
-set(fh1, 'CurrentAxes', ax(4))
-imagesc(x,z,C); axis equal tight;  box on; cb = colorbar;
+imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on
+if exist('indstruct','var')
+    for i = 1:size(indstruct,3)
+        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    end
+end
+clim([min(C(:)),max(C(:))])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
+
+set(fh1, 'CurrentAxes', ax(3))
+imagesc(x,z,T); axis equal tight;  box on; cb = colorbar; hold on
+if exist('indstruct','var')
+    for i = 1:size(indstruct,3)
+        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    end
+end
+clim([min(T(:)),max(T(:))])
+set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
+
+set(fh1, 'CurrentAxes', ax(4))
+imagesc(x,z,V); axis equal tight; box on; cb = colorbar; hold on
+if exist('indstruct','var')
+    for i = 1:size(indstruct,3)
+        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    end
+end
+clim([min(V(:)),max(V(:))])
+set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 drawnow
