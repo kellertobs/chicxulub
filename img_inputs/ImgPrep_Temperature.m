@@ -10,7 +10,7 @@ workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_Right_01');  % Use this parameter file
+run('../usr/par_Lonar_Right_03_wide_b.m');  % Use this parameter file
 
 
 % % Adjust these parameters if you're not happy with end pixelated images
@@ -20,7 +20,7 @@ se        = strel('disk', 10);        % Used for removing tiny bits of black pix
 thck      = 5;                        % Used for making units slightly thicker, so that there's not holes          
 
 projectName    = runID         % Specify project name so files will saved with some info
-foldername     = [outdir_ImgPrep projectName '_' num2str(N) 'x' num2str(M)];    % Specify foldername for output
+foldername     = [outdir_ImgPrep projectName '_' num2str(Nx) 'x' num2str(Nz)];    % Specify foldername for output
 mkdir (sprintf(foldername));   % Make the specified directory
 
 
@@ -121,7 +121,7 @@ for i = 1:nUnits_T
 
 
     %% Pixelate
-    imgBW5 = imresize(imgBW4, [N M]);   % Pixelate the image to appropriate grid size
+    imgBW5 = imresize(imgBW4, [Nx Nz]);   % Pixelate the image to appropriate grid size
     subplot(3, 4, 10);   % Where to plot the segmented image      
     imshow(imgBW5);      % Show the image
     title("Pixelated");  % Title for the image
@@ -169,7 +169,7 @@ for i = 1:nUnits_T
     drawnow
 end
 
-filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_TClusters.png'];    % Specify filename
+filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_TClusters.png'];    % Specify filename
 saveas(f1, filename)   ;      % Save figure of all clusters
 
 
@@ -179,10 +179,11 @@ disp(msg4)
 keyboard    
 
 %% Assign temperatures to each array (need to do this by person brain at the moment, may be a smarter way)
-T_array = []
+%% Lonar
+% T_array = [];T
 
 T_array{1} = 500*c{1};
-T_array{2} = Twat*c{2};
+T_array{2} = T_wat*c{2};
 T_array{3} = 100*c{3};
 T_array{4} = 400*c{4};
 T_array{5} = 50*c{5};
@@ -192,7 +193,28 @@ T_array{7}  = 300*c{7};
 T_array{8}  = 600*c{8};
 T_array{9}  = 700*c{9};
 
+
 T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9};
+
+
+
+%% Boltysh
+% T_array = [];T
+% 
+% T_array{1} = 450*c{1};
+% T_array{2} = 250*c{2};
+% T_array{3} = 30*c{3};
+% T_array{4} = 350*c{4};
+% T_array{5} = Twat*c{5};
+% 
+% T_array{6}  = 120*c{6};
+% T_array{7}  = 150*c{7};
+% T_array{8}  = 550*c{8};
+% T_array{9}  = 900*c{9};
+% T_array{10}  = 1200*c{10};
+% 
+% 
+% T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9} + T_array{10};
 
 
 % T_array{1} = 50*c{1};
@@ -218,29 +240,8 @@ T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_ar
 % 
 % T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9} + T_array{10} + T_array{11} + T_array{12} + T_array{13} + T_array{14} + T_array{15} + T_array{16} + T_array{17};
 
-%% Change all values in array with temperatures - This is the old way
-
-% max_grey = max(imgBW5, [], 'all' )  % Maximum luminosity in greyscale image (colour of max T contours)
-% min_grey = min(imgBW5, [], 'all' )  % Minimum luminosity in greyscale image (colour of min T contours)
-% 
-% max_T = 800    % Maximum Temperature 
-% min_T = 50      % Minimum Temperature 
-% 
-% n_T   = length(unique(imgBW5))  % Total number of unique values in array
-% 
-% contour_width = (max_T-min_T)/n_T
-% 
-% scaling_factor = double(max_T/max_grey);
-% TempArray = double(imgBW5);
-% 
-% T_array = TempArray.*scaling_factor;
-% 
-% max_T_array = max(T_array, [], 'all')
-% min_T_array = min(T_array, [], "all")
-
-
 %% Save array of temperatures
 
-filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_TArray.mat'];    % Specify filename
+filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_TArray.mat'];    % Specify filename
 save([filename],'T_array2')
 

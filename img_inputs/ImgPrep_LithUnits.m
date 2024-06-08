@@ -14,7 +14,7 @@ workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_Right_01');  % Use this parameter file
+run('../usr/par_Lonar_Right_03_wide_b.m');  % Use this parameter file
 
 % % Adjust these parameters if you're not happy with end pixelated images
 % (watching each step plot on the first figure can tell you where you have problems (might be over/undersmoothing things)
@@ -24,7 +24,7 @@ thck    = 2;                     % Used for making units slightly thicker, so th
 
 
 projectName = runID % Specify project name so files will saved with some info
-foldername  = [outdir_ImgPrep projectName '_' num2str(N) 'x' num2str(M)];    % Specify foldername for output
+foldername  = [outdir_ImgPrep projectName '_' num2str(Nx) 'x' num2str(Nz)];    % Specify foldername for output
 mkdir (sprintf(foldername));    % Make the specified directory
 
 
@@ -125,7 +125,7 @@ for i = 1:nUnits_Lith
 
 
     %% Pixelate
-    imgBW5 = imresize(imgBW4, [N M]);   % Pixelate the image to appropriate grid size
+    imgBW5 = imresize(imgBW4, [Nx Nz]);   % Pixelate the image to appropriate grid size
     subplot(3, 4, 10);   % Where to plot the segmented image      
     imshow(imgBW5);      % Show the image
     title("Pixelated");  % Title for the image
@@ -156,7 +156,7 @@ end
 %% Save images
 for l = 1:nUnits_Lith
     imgTitle = ['Lith_' num2str(l)];  % Make a title for the image that tells you which cluster it is
-    filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_' imgTitle '.png'];    % Specify filename
+    filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
     imwrite(c{l}, filename);
     msg1 = ['Saved_' imgTitle '.png'];
     disp(msg1)
@@ -190,5 +190,5 @@ for i = 1:nUnits_Lith
     drawnow
 end
 
-filename = [foldername '/' projectName '_' num2str(N) 'x' num2str(M) '_LithClusters.png'];    % Specify filename
+filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_LithClusters.png'];    % Specify filename
 saveas(f1, filename)   ;      % Save figure of all clusters
