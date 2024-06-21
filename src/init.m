@@ -156,6 +156,7 @@ end
 fin = f;
 Tin = T;
 Cin = C;
+Vin = V;
 
 % get permeability [m2]
 k = k0 * f(icz,icx).^n;  % Kozeny-Carman relationship
@@ -256,3 +257,9 @@ end
 clim([min(V(:)),max(V(:))])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 drawnow
+
+% print figure to file
+if svout
+    print(fh1,[outdir,'/',runID,'/',runID,'_init_',int2str(step/nout)],'-dpng','-r200')
+    save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
+end

@@ -62,33 +62,33 @@ if ~mod(step,nout)
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Dynamic fluid pressure [Pa]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(4))
-    imagesc(x,z,T(2:end-1,2:end-1)); axis equal tight; box on; cb = colorbar; hold on
+    imagesc(x,z,T); axis equal tight; box on; cb = colorbar; hold on
     if exist('indstruct','var')
         for i = 1:size(indstruct,3)
             contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(T(:)),max(T(:))])
+    clim([min(Tin(:)),max(Tin(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(5))
-    imagesc(x,z,C(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on;
+    imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on;
     if exist('indstruct','var')
         for i = 1:size(indstruct,3)
             contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(C(:)),max(C(:))])
+    clim([min(Cin(:)),max(Cin(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(6))
-    imagesc(x,z,V(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on
+    imagesc(x,z,V); axis equal tight;  box on; cb = colorbar; hold on
     if exist('indstruct','var')
         for i = 1:size(indstruct,3)
             contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(V(:)),max(V(:))])
+    clim([min(Vin(:)),max(Vin(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 
