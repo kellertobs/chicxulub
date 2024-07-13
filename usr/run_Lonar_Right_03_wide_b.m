@@ -1,10 +1,10 @@
 clear; close all; clc;
 
-par_Lonar_Right_03;
+par_Lonar_Right_03_wide_b;
 
 % SET MODEL PARAMETERS
-runID   = 'Lonar_Right_03_wide_b'; % run identifier tag
-nout    = 20;       % print output every 'nop' steps
+runID   = 'Lonar_Right_03_wide_b_fix'; % run identifier tag
+nout    = 10;       % print output every 'nop' steps
 svout   = 1;        % save figures and data to file (1)
 
 Nz      = 100;
@@ -38,7 +38,7 @@ wat  = imread(indir + "Lonar_Right_03_wide_b_100x200_Lith_6.png"); % Binary imag
 air  = imread(indir + "Lonar_Right_03_wide_b_100x200_Lith_3.png"); % Binary image showing location of Air
 
 wat_evolve = false;              % evolve water as well-mixed reservoir; else keep T,C constant
-tau_eqlb   = 1*3600*24*365.25;  % water-air thermal equilibration time 
+tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
 
 wat(1,:)   = 0;                 % input image has wrong values along topmost row, please fix
 air(1,:)   = 1;                 % input image has wrong values along topmost row, please fix
@@ -61,8 +61,8 @@ Tstruct   =   nan*[T_air, T_wat, T_sed,  T_plb,      T_mlb, T_imr, T_bslt, T_bsm
 Cstruct   =       [C_air, C_wat, C_sed,  C_plb,      C_mlb, C_imr, C_bslt, C_bsmt];   % salinity of structures (nan = do not set)
 
 tol     = 1e-7;      % residual tolerance for iterative solver
-alpha   = 1.25;      % step size for iterative solver
-beta    = 0.99;      % damping parameter for iterative solver
+alpha   = 0.99;      % step size for iterative solver
+beta    = 0.98;      % damping parameter for iterative solver
 maxit   = 5e3;       % maximum number of iterations
 
 %*****  RUN CHICXULUB MODEL  *************************************************

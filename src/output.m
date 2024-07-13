@@ -95,6 +95,6 @@ if ~mod(step,nout)
     % print figure to file
     if svout
         print(fh2,[outdir,'/',runID,'/',runID,'_sol_',int2str(step/nout)],'-dpng','-r200')
-        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
+        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time');
     end
 end

@@ -39,6 +39,8 @@ h_crp = 0.5;
 
 %% Set conditions for run_impact.m
 
+k0      = 1e-12;    % background permeability [m2]
+
 % set initial condition parameters
 finit   = 'linear'; % initial condition: 'linear' or 'layer' or 'array'
 f0      = 0.10;     % top/background initial porosity [vol]
@@ -46,7 +48,7 @@ f1      = 0.01;     % base porosity [vol]
 df      = 0.001;    % perturbation amplitude [vol]
 
 Tinit   = 'linear'; % initial condition: 'linear' or 'layer' or 'array'
-Ttop    = 0;        % top boundary temperature
+Ttop    = 10;       % top boundary temperature
 Tbot    = 30;       % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
@@ -103,7 +105,7 @@ C_bsmt = 0.0;     % Basement salinity
 % Tstruct   =       [T_wat, T_sed,  T_plb,      T_mlb, T_imr, T_bslt, T_bsmt];   % temperature of structures (nan = do not set)
 % Cstruct   =       [C_wat, C_sed,  C_plb,      C_mlb, C_imr, C_bslt, C_bsmt];   % salinity of structures (nan = do not set)
 
-smth    = 5; % smoothness of initial fields
+smth    = 2; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {{'flux',[0,0.03]},'closed'};

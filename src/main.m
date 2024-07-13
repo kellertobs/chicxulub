@@ -25,7 +25,7 @@ init;
 %% TIME STEPPING LOOP      
 
 
-while time <= tend && step <= Nt      
+while time <= tend && step <= Nt || max(Ra(:))<1
 
         
     tic;
@@ -63,19 +63,21 @@ while time <= tend && step <= Nt
 
             if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
 
-            res_T = (T-To)/(dt+TINY) - (dTdt + dTdto)/2;
-            
-            res_T(air==1) = 0;  % set air to isothermal
             if wat_evolve
-                res_T(wat==1) = mean(res_T(wat==1),'all');   % set water to evolving reservoir
+                dTdt_wat = sum(wat(:).*dTdt(:))./sum(wat(:));
             else
-                res_T(wat==1) = 0;  % set water to isothermal
+                dTdt_wat = 0;
             end
+            dTdt = (1-wat-air).*dTdt + wat.*dTdt_wat + air*0;
+
+            res_T = (T-To)/dt - (dTdt + dTdto)/2;
 
             T = T - res_T*dt/5;
 
-            if wat_evolve;  T_wat     = mean(T(wat==1),'all');  
-            else;           T(wat==1) = T_wat; end
+            % set water to evolving reservoir
+            if wat_evolve
+                T_wat = mean(T(wat==1),'all');
+            end
 
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -88,21 +90,22 @@ while time <= tend && step <= Nt
             
             if bnchm; dCdt = dCdt + src_C_mms(:,:,step+1); end
 
+            if wat_evolve
+                dCdt_wat = sum(wat(:).*dCdt(:))./sum(wat(:));
+            else
+                dCdt_wat = 0;
+            end
+            dCdt = (1-wat-air).*dCdt + wat.*dCdt_wat + air*0;
+
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            res_C(air==1) = 0;  % set air to isohaline
-            if wat_evolve
-                res_C(wat==1) = mean(res_C(wat==1),'all');   % set water to evolving reservoir
-            else
-                res_C(wat==1) = 0;  % set water to isohaline
-            end
-
             C = C - res_C*dt/5;
-
             C = max(0,min(1,C));  % saveguard min/max bounds
-            if wat_evolve;  C_wat = mean(C(wat==1),'all');
-            else;           C(wat==1) = C_wat; end
 
+            % set water to evolving reservoir
+            if wat_evolve
+                C_wat = mean(C(wat==1),'all');
+            end
 
             % UPDATE VAPOUR SOLUTION (SEMI-IMPLICIT UPDATE)
             
@@ -113,34 +116,35 @@ while time <= tend && step <= Nt
 
             Vq = vapour(T,C,Plith);
 
-            phsr_V = -(V - Vq)./5/(dt+TINY);
+            phsr_V = -(V - Vq)./5/(dt+1);
 
             dVdt = advn_V + diff_V + phsr_V;
 
             if bnchm; dVdt = dVdt + src_V_mms(:,:,step+1); end
 
+            if wat_evolve
+                dVdt_wat = sum(wat(:).*dVdt(:))./sum(wat(:));
+            else
+                dVdt_wat = 0;
+            end
+            dVdt = (1-wat-air).*dVdt + wat.*dVdt_wat + air*0;
+
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
-            res_V(air==1) = 0;  % set air to no vapour
+            V = V - res_V*dt/5;
+            V = max(0,min(1,V));  % saveguard min/max bounds
+ 
+            % set water to evolving reservoir
             if wat_evolve
-                res_V(wat==1) = mean(res_V(wat==1),'all');   % set water to evolving reservoir
-            else
-                res_V(wat==1) = 0;  % set water to no vapour
+                V_wat = mean(V(wat==1),'all');
             end
 
-            V = V - res_V*dt/5;
-
-            V = max(0,min(1,V));  % saveguard min/max bounds
-            if wat_evolve;  V_wat = mean(V(wat==1),'all'); 
-            else;           V(wat==1) = 0; end
-
-
             % update density difference
-            Drho  = rhol0.*(- aT.*(T(icz,icx)-0*mean(T(icz,:),2)) ...
-                            + aC.*(C(icz,icx)-0*mean(C(icz,:),2)) ...
-                            - aV.*(V(icz,icx)-0*mean(V(icz,:),2)) );
-            Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
-            Drho = Drho - mean(Drho(icz,:),2);
+            rho  = rhol0.*(1 - aT.*T(icz,icx) ...
+                             + aC.*C(icz,icx) ...
+                             - aV.*V(icz,icx) );% .* (1-air(icz,icx));
+            Drho = rho - mean(rho,2);
+            % Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
             Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
             if bnchm; Drhoz = Drho_mms(:,:,step+1); end
         end
@@ -167,7 +171,7 @@ while time <= tend && step <= Nt
         res_p = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
         if bnchm; res_p = res_p - src_p_mms(:,:,step+1); end
 
-        res_p(air==1) = 0;  % set air to zero
+        res_p(air>=0.5) = 0;  % set air to zero
 
         % update pressure solution
         p(2:end-1,2:end-1) = pi(2:end-1,2:end-1) - alpha.*res_p.*dtau + beta.*(pi(2:end-1,2:end-1)-pii(2:end-1,2:end-1));
@@ -194,9 +198,10 @@ while time <= tend && step <= Nt
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            resnorm = norm(res_p.*dtau,2)./norm(p(2:end-1,2:end-1)+1e-6,2) ... 
-                    + norm(res_T.*dt/2,2)./norm(T(2:end-1,2:end-1)+1e-6,2) ...
-                    + norm(res_C.*dt/2,2)./norm(C(2:end-1,2:end-1)+1e-6,2);
+            resnorm = norm(res_p.*dtau.*(1-air-wat),2)./norm(p+1,2) ... 
+                    + norm(res_T.*dt/2.*(1-air-wat),2)./norm(T+1,2) ...
+                    + norm(res_C.*dt/2.*(1-air-wat),2)./norm(C+1,2) ...
+                    + norm(res_V.*dt/2.*(1-air-wat),2)./norm(V+1,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);
@@ -212,6 +217,11 @@ while time <= tend && step <= Nt
 
     soltime = toc;  % record time to solution
     fprintf(1,'\n\n      time to solution = %1.3e [s] \n\n',soltime);
+
+    % update dimensionless numbers
+    Vel = sqrt(((w(1:end-1,2:end-1)+w(2:end,2:end-1))/2).^2 ...
+             + ((u(2:end-1,1:end-1)+u(2:end-1,2:end))/2).^2);
+    Ra = Vel.*D./(kT+kC+kV); 
 
 
 %%  PLOT AND SAVE SOLUTION

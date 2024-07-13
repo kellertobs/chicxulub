@@ -26,7 +26,7 @@ if bnchm; mms; else  % construct manufactured solution if running benchmark [AP:
 rng(15); 
 smth = smth*Nz^2*1e-4;
 rp   = randn(Nz,Nx);
-for i = 1:round(smth)
+for i = 1:round(smth*2)
     rp = rp + diffus(rp,ones(size(rp))/8,1,[1,2],BC_VP);
     rp = rp - mean(mean(rp));
 end
@@ -100,7 +100,7 @@ if exist('CArray','var')
     C = C + CArray;
 end
 
-% prepare treatment for water
+% prepare treatment for water and air
 if exist('wat','var')
     rp(wat==1) = 0;
     f (wat==1) = 0.5;
@@ -109,30 +109,32 @@ if exist('wat','var')
     wat_surf   = diff(wat,1)>0;
     wat_base   = diff(wat,1)<0;
     [jbed, ibed] = find(diff(wat(icz,icx))<0);
+    sub2ind     = sub2ind(size(wat),jbed,ibed);
 else
     wat = zeros(Nz,Nx);
 end
+if exist('air','var') 
+    rp(air==1) = 0;
+    f (air==1) = 1.0;
+    T (air==1) = T_air;
+    C (air==1) = 0;
+else
+    air = zeros(Nz,Nx);
+end
 
-% Smoothing function applied to structure indicator to minimise sharp
-for i=1:smth/4
+% smoothing applied to initial fields to avoid sharp contrasts
+for i=1:smth
     f = f + diffus(f,ones(size(f))/8,1,[1,2],{'',''});
     T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
     C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
+    wat = wat + diffus(wat,ones(size(wat))/8,1,[1,2],{'',''});
+    air = air + diffus(air,ones(size(air))/8,1,[1,2],{'',''});
 end
 
 % add smooth random perturbations
 f = f + df.*rp;
 T = T + dT.*rp;
 C = C + dC.*rp;
-
-if exist('air','var') 
-    rp(air==1) = 0;
-    f (air==1) = 1e-3;
-    T (air==1) = T_air;
-    C (air==1) = 0;
-else
-    air = zeros(Nz,Nx);
-end
 
 % enforce bounds on porosity
 f = max(1e-3,min(1-1e-3,f));
@@ -141,8 +143,14 @@ f = max(1e-3,min(1-1e-3,f));
 T = T + (Ttop-T).*exp(-max(0,Z)/h);
 C = C + (Ctop-C).*exp(-max(0,Z)/h);
 
+% adjustment for treatment of air and water
+f = (1-wat-air).*f + wat.*0.5   + air.*1.0  ;
+T = (1-wat-air).*T + wat.*T_wat + air.*T_air;
+C = (1-wat-air).*C + wat.*C_wat + air.*0.0  ;
+
 res_T = zeros(Nz,Nx);  % residual for temperature equation
 res_C = zeros(Nz,Nx);  % residual for salinity equation
+res_V = zeros(Nz,Nx);  % residual for vapour equation
 
 % initialise vapour phase
 Plith = 2600.*grav.*Z;
@@ -158,6 +166,13 @@ Tin = T;
 Cin = C;
 Vin = V;
 
+% initialise evolving values 
+if wat_evolve
+    T_wat = mean(T(wat>=1),'all');
+    C_wat = mean(C(wat>=1),'all');
+    V_wat = mean(V(wat>=1),'all');
+end
+
 % get permeability [m2]
 k = k0 * f(icz,icx).^n;  % Kozeny-Carman relationship
 
@@ -170,13 +185,26 @@ Kx = (K(:,1:end-1)+K(:,2:end))./2;
 dtau = (h/2)^2./K(2:end-1,2:end-1);
 
 % update density difference
-Drho  = rhol0.*(- aT.*(T(icz,icx)-0*mean(T(icz,:),2)) ...
-                + aC.*(C(icz,icx)-0*mean(C(icz,:),2)) ...
-                - aV.*(V(icz,icx)-0*mean(V(icz,:),2)) );
-Drho(air(icz,icx)+wat(icz,icx)>=1) = 0;  % set air and water to zero
-Drho = Drho - mean(Drho(icz,:),2);
+rho  = rhol0.*(1 - aT.*T(icz,icx) ...
+                 + aC.*C(icz,icx) ...
+                 - aV.*V(icz,icx) );% .* (1-air(icz,icx));
+Drho = rho - mean(rho,2);
+% Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
 Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
 if bnchm; Drhoz = Drho_mms(:,:,step+1); end
+
+% get dimensionless numbers
+Pr0  = 1./geomean(K(:))./rhol0./kT;
+ScC0 = 1./geomean(K(:))./rhol0./kC;
+ScV0 = 1./geomean(K(:))./rhol0./kV;
+LeC0 = kT./kC;
+LeV0 = kT./kV;
+RbC0 = aT.*(max(T(air<0.5))-min(T(air<0.5))) ./ (aC.*(max(C(air<0.5))-min(C(air<0.5))));
+RbV0 = aT.*(max(T(air<0.5))-min(T(air<0.5))) ./ (aC.*(max(V(air<0.5))-min(V(air<0.5))));
+RaT0 = rhol0.*aT.*(max(T(air<0.5))-min(T(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kT;
+RaC0 = rhol0.*aC.*(max(C(air<0.5))-min(C(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kC;
+RaV0 = rhol0.*aV.*(max(V(air<0.5))-min(V(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kV;
+Ra   = (RaT0+RaC0+RaV0).*ones(size(T));
 
 % prepare solution & residual arrays for VP solver
 w = zeros(Nz+1,Nx+2);   % vertical Darcy speed
@@ -188,7 +216,7 @@ res_p = zeros(Nz,Nx)./dtau;  % residual for pressure equation
 dTdt = 0.*T;
 dCdt = 0.*C;
 dVdt = 0.*V;
-dt   = 0;
+dt   = 1e3;
 step = 0;
 time = 0;
 
