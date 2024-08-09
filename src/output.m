@@ -92,9 +92,9 @@ if ~mod(step,nout)
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 
-    % print figure to file
+    % print figure and save data to file
     if svout
         print(fh2,[outdir,'/',runID,'/',runID,'_sol_',int2str(step/nout)],'-dpng','-r200')
-        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time');
+        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','indstruct');
     end
 end

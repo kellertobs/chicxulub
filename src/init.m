@@ -52,34 +52,6 @@ switch Cinit  % initial salinity
         C = C0 + (C1-C0) .* (1+erf((Z/D-zlay)/wlay))/2;
 end
 
-
-% % % add linear structures (faults, aquifers, etc.)
-% % % get indicator functions
-% % % indstruct = zeros([size(f),length(fstruct)]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
-% % % for i = 1:length(zstruct)                               
-% % %     indstruct(:,:,i) = abs(Z-D/2)<=hstruct(i)/2 & abs(X-D/2)<=wstruct(i)/2;
-% % %     indstruct(:,:,i) = imrotate(indstruct(:,:,i),astruct(i),'crop');
-% % %     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-zstruct(i))/D*N),1);
-% % %     indstruct(:,:,i) = circshift(indstruct(:,:,i),-round((D/2-xstruct(i))/D*N),2);
-% % %     indstruct(  z>zstruct(i)+(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2 | z<zstruct(i)-(hstruct(i)+abs(cosd(astruct(i))*wstruct(i)))/2,:,i) = 0;
-% % %     indstruct(:,x>xstruct(i)+(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2 | x<xstruct(i)-(wstruct(i)+abs(sind(astruct(i))*hstruct(i)))/2,  i) = 0;
-% % %     indstruct([1 end],:,i) = indstruct([2 end-1],:,i);
-% % %     indstruct(:,[1 end],i) = indstruct(:,[2 end-1],i);
-% % % end
-% % 
-% % % % add linear structures (faults, aquifers, etc.) ****************NEW
-% % % % get indicator functions
-% % % indstruct = zeros([size(f),numColors]);       % % Change zstruct to number of binary images (number of units) k in image prep stuff
-% % % 
-% % % % Smoothing function applied to structure indicator to minimise sharp interfaces
-% % % for i=1:smth/2
-% % %     indstruct(2:end-1,2:end-1,:) = indstruct(2:end-1,2:end-1,:) ...
-% % %                             + diff(indstruct(:,2:end-1,:),2,1)./8 ...
-% % %                             + diff(indstruct(2:end-1,:,:),2,2)./8;
-% % %     indstruct([1 end],:,:) = indstruct([2 end-1],:,:);
-% % %     indstruct(:,[1 end],:) = indstruct(:,[end-1 2],:);
-% % % end
-
 % update initial condition within structures
 if exist('indstruct','var')
     for i = 1:size(indstruct,3)
@@ -220,6 +192,7 @@ dt   = 1e3;
 step = 0;
 time = 0;
 
+
 %% PLOT INITIAL CONDITIONS
 
 % prepare for plotting
@@ -289,5 +262,5 @@ drawnow
 % print figure to file
 if svout
     print(fh1,[outdir,'/',runID,'/',runID,'_init_',int2str(step/nout)],'-dpng','-r200')
-    save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'u','w','p','T','C','dTdt','dCdt','K','Drho');
+        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','indstruct');
 end
