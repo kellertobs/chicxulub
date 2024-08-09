@@ -10,7 +10,7 @@ workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_Right_03_wide_b.m');  % Use this parameter file
+run('../usr/par_Lonar_Right_04_4.m');  % Use this parameter file
 
 
 % % Adjust these parameters if you're not happy with end pixelated images
@@ -182,19 +182,19 @@ keyboard
 %% Lonar
 % T_array = [];T
 
-T_array{1} = 500*c{1};
-T_array{2} = T_wat*c{2};
-T_array{3} = 100*c{3};
-T_array{4} = 400*c{4};
-T_array{5} = 50*c{5};
+T_array{1} = 50*c{1};
+T_array{2} = 225*c{3};
+T_array{3} = T_wat*c{2};
+T_array{4} = 25*c{4};
+T_array{5} = 300*c{5};
 
-T_array{6}  = 200*c{6};
-T_array{7}  = 300*c{7};
-T_array{8}  = 600*c{8};
-T_array{9}  = 700*c{9};
+T_array{6}  = 130*c{6};
+T_array{7}  = 80*c{7};
+T_array{8}  = 375*c{8};
+% T_array{9}  = 700*c{9};
 
 
-T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9};
+T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8};
 
 
 
