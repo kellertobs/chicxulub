@@ -14,7 +14,7 @@ bnchm   = 0;        % run benchmark
 % set domain parameters
 Nz      = 200;      % num. grid size
 Nx      = Nz;
-D       = 2e3;      % phys. domain depth [m]
+D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
 mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
