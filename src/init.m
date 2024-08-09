@@ -53,11 +53,11 @@ switch Cinit  % initial salinity
 end
 
 % update initial condition within structures
-if exist('indstruct','var')
-    for i = 1:size(indstruct,3)
-        if ~isnan(fstruct(i)); f = f + indstruct(:,:,i).*fstruct(i); end
-        if ~isnan(Tstruct(i)); T = T + indstruct(:,:,i).*Tstruct(i); end
-        if ~isnan(Cstruct(i)); C = C + indstruct(:,:,i).*Cstruct(i); end
+if ~any(isnan(unit(:)))
+    for i = 1:size(unit,3)
+        if ~isnan(fstruct(i)); f = f + unit(:,:,i).*fstruct(i); end
+        if ~isnan(Tstruct(i)); T = T + unit(:,:,i).*Tstruct(i); end
+        if ~isnan(Cstruct(i)); C = C + unit(:,:,i).*Cstruct(i); end
     end
 end
 
@@ -158,7 +158,7 @@ dtau = (h/2)^2./K(2:end-1,2:end-1);
 
 % update density difference
 rho  = rhol0.*(1 - aT.*T(icz,icx) ...
-                 + aC.*C(icz,icx) ...
+                 - aC.*C(icz,icx) ...
                  - aV.*V(icz,icx) );% .* (1-air(icz,icx));
 Drho = rho - mean(rho,2);
 % Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
@@ -171,11 +171,11 @@ ScC0 = 1./geomean(K(:))./rhol0./kC;
 ScV0 = 1./geomean(K(:))./rhol0./kV;
 LeC0 = kT./kC;
 LeV0 = kT./kV;
-RbC0 = aT.*(max(T(air<0.5))-min(T(air<0.5))) ./ (aC.*(max(C(air<0.5))-min(C(air<0.5))));
-RbV0 = aT.*(max(T(air<0.5))-min(T(air<0.5))) ./ (aC.*(max(V(air<0.5))-min(V(air<0.5))));
-RaT0 = rhol0.*aT.*(max(T(air<0.5))-min(T(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kT;
-RaC0 = rhol0.*aC.*(max(C(air<0.5))-min(C(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kC;
-RaV0 = rhol0.*aV.*(max(V(air<0.5))-min(V(air<0.5))) .* grav .* geomean(K(:)) .* D ./ kV;
+RbC0 = abs(aT.*(Ttop-Tbot)) ./ abs(aC.*(Ctop-Cbot));
+RbV0 = abs(aT.*(Ttop-Tbot)) ./ (aV.*(max(V(:))-min(V(:))));
+RaT0 = rhol0 .* max(0,-aT.*(Ttop-Tbot))   .* grav .* geomean(K(:)) .* D ./ kT;
+RaC0 = rhol0 .* max(0,-aC.*(Ctop-Cbot))   .* grav .* geomean(K(:)) .* D ./ kC;
+RaV0 = rhol0 .* aV.*(max(V(:))-min(V(:))) .* grav .* geomean(K(:)) .* D ./ kV;
 Ra   = (RaT0+RaC0+RaV0).*ones(size(T));
 
 % prepare solution & residual arrays for VP solver
@@ -188,7 +188,6 @@ res_p = zeros(Nz,Nx)./dtau;  % residual for pressure equation
 dTdt = 0.*T;
 dCdt = 0.*C;
 dVdt = 0.*V;
-dt   = 1e3;
 step = 0;
 time = 0;
 
@@ -220,9 +219,9 @@ ax(4) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
 
 set(fh1, 'CurrentAxes', ax(1))
 imagesc(x,z,f); axis equal tight; box on; cb = colorbar; hold on
-if exist('indstruct','var')
-    for i = 1:size(indstruct,3)
-        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+if ~any(isnan(unit(:)))
+    for i = 1:size(unit,3)
+        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
 clim([min(f(:)),max(f(:))])
@@ -230,9 +229,9 @@ set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},
 
 set(fh1, 'CurrentAxes', ax(2))
 imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on
-if exist('indstruct','var')
-    for i = 1:size(indstruct,3)
-        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+if ~any(isnan(unit(:)))
+    for i = 1:size(unit,3)
+        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
 clim([min(C(:)),max(C(:))])
@@ -240,9 +239,9 @@ set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS
 
 set(fh1, 'CurrentAxes', ax(3))
 imagesc(x,z,T); axis equal tight;  box on; cb = colorbar; hold on
-if exist('indstruct','var')
-    for i = 1:size(indstruct,3)
-        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+if ~any(isnan(unit(:)))
+    for i = 1:size(unit,3)
+        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
 clim([min(T(:)),max(T(:))])
@@ -250,17 +249,17 @@ set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},
 
 set(fh1, 'CurrentAxes', ax(4))
 imagesc(x,z,V); axis equal tight; box on; cb = colorbar; hold on
-if exist('indstruct','var')
-    for i = 1:size(indstruct,3)
-        contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+if ~any(isnan(unit(:)))
+    for i = 1:size(unit,3)
+        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
-clim([min(V(:)),max(V(:))])
+clim([min(V(:)-eps),max(V(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 drawnow
 
 % print figure to file
 if svout
     print(fh1,[outdir,'/',runID,'/',runID,'_init_',int2str(step/nout)],'-dpng','-r200')
-        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','indstruct');
+        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','unit');
 end

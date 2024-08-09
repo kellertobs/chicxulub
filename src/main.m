@@ -25,7 +25,7 @@ init;
 %% TIME STEPPING LOOP      
 
 
-while time <= tend && step <= Nt || max(Ra(:))<1
+while time <= tend && step <= Nt || max(Ra(:))<100
 
         
     tic;
@@ -72,7 +72,7 @@ while time <= tend && step <= Nt || max(Ra(:))<1
 
             res_T = (T-To)/dt - (dTdt + dTdto)/2;
 
-            T = T - res_T*dt/5;
+            T = T - res_T*dt/6;
 
             % set water to evolving reservoir
             if wat_evolve
@@ -99,7 +99,7 @@ while time <= tend && step <= Nt || max(Ra(:))<1
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            C = C - res_C*dt/5;
+            C = C - res_C*dt/6;
             C = max(0,min(1,C));  % saveguard min/max bounds
 
             % set water to evolving reservoir
@@ -131,7 +131,7 @@ while time <= tend && step <= Nt || max(Ra(:))<1
 
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
-            V = V - res_V*dt/5;
+            V = V - res_V*dt/6;
             V = max(0,min(1,V));  % saveguard min/max bounds
  
             % set water to evolving reservoir
@@ -141,7 +141,7 @@ while time <= tend && step <= Nt || max(Ra(:))<1
 
             % update density difference
             rho  = rhol0.*(1 - aT.*T(icz,icx) ...
-                             + aC.*C(icz,icx) ...
+                             - aC.*C(icz,icx) ...
                              - aV.*V(icz,icx) );% .* (1-air(icz,icx));
             Drho = rho - mean(rho,2);
             % Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
@@ -199,9 +199,9 @@ while time <= tend && step <= Nt || max(Ra(:))<1
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
             resnorm = norm(res_p.*dtau.*(1-air-wat),2)./norm(p+1,2) ... 
-                    + norm(res_T.*dt/2.*(1-air-wat),2)./norm(T+1,2) ...
-                    + norm(res_C.*dt/2.*(1-air-wat),2)./norm(C+1,2) ...
-                    + norm(res_V.*dt/2.*(1-air-wat),2)./norm(V+1,2);
+                    + norm(res_T.*dt/6.*(1-air-wat),2)./norm(T+1,2) ...
+                    + norm(res_C.*dt/6.*(1-air-wat),2)./norm(C+1,2) ...
+                    + norm(res_V.*dt/6.*(1-air-wat),2)./norm(V+1,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);

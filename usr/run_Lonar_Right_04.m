@@ -55,7 +55,7 @@ tau_eqlb   = 1*3600*24*365.25;  % water-air thermal equilibration time
 wat(1,:)   = 0;                 % input image has wrong values along topmost row, please fix
 air(1,:)   = 1;                 % input image has wrong values along topmost row, please fix
 
-indstruct = cat(3,   air,   wat,   sed,   cbrc,   bslt_pdr,  mbrc,   bslt,   bsmt);   % Name and order of structures
+unit = cat(3,   air,   wat,   sed,   cbrc,   bslt_pdr,  mbrc,   bslt,   bsmt);   % Name and order of structures
 fstruct   =       [f_air, f_wat, f_sed,  f_plb,      f_mlb, f_imr, f_bslt, f_bsmt];   % porosity of structures (nan = do not set)
 Tstruct   =   nan*[T_air, T_wat, T_sed,  T_plb,      T_mlb, T_imr, T_bslt, T_bsmt];   % temperature of structures (nan = do not set)
 Cstruct   =       [C_air, C_wat, C_sed,  C_plb,      C_mlb, C_imr, C_bslt, C_bsmt];   % salinity of structures (nan = do not set)

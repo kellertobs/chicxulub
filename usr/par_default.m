@@ -23,9 +23,9 @@ kC      = 1e-8;     % chemical diffusivity [m2/s]
 kT      = 1e-6;     % thermal diffusivity [m2/s]
 kV      = 1e-7;     % vapour bubble diffusivity [m2/s]
 aT      = 1e-4;     % thermal expansivity [1/K]
-aC      = 1.1;      % chemical expansivity [1/wt]
+aC      = -1.1;     % chemical expansivity [1/wt]
 aV      = 0.90;     % vapour-liquid density contrast [1/wt]
-LH      = 2260e3/4200; % temperature jump from latent heat of vapourisation [J/kg]
+LH      = 2.25e6/4200; % temperature jump from latent heat of vapourisation [C]
 
 % set initial condition parameters
 finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
@@ -104,18 +104,20 @@ T_wat      = 10;
 C_wat      = 0.035;
 wat_evolve = false;             % evolve water as well-mixed reservoir; else keep T,C constant
 tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
+unit       = nan;
 
 smth    = 10; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'closed'};
 BC_C    = {[Ctop,Cbot],'closed'};
+BC_V    = {'closed','closed'};
 BC_VP   = {'open','closed'};
 
 % set model timing parameters
 tend    = 1e11;      % model stopping time [s]
 Nt      = 1e5;       % max number of time step
-
+dt      = 1e3;       % initial time step
 
 % set numerical solver parameters
 CFL     = 1.0;       % Courant-Friedrich-Lewy number to limit time step size

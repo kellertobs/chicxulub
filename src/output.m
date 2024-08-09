@@ -33,9 +33,9 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(1))
     imagesc(x,z,-w(2:end-1,:).*3600); axis equal tight; box on; cb = colorbar; hold on;
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
     clim([min(-w(:).*3600),max(-w(:).*3600)])
@@ -43,9 +43,9 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(2))
     imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar; hold on;
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
     clim([min(u(:).*3600),max(u(:).*3600)])
@@ -53,9 +53,9 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(3))
     imagesc(x,z,p(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on;
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
     clim([min(p(:)),max(p(:))])
@@ -63,9 +63,9 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(4))
     imagesc(x,z,T); axis equal tight; box on; cb = colorbar; hold on
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
     clim([min(Tin(:)),max(Tin(:))])
@@ -73,9 +73,9 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(5))
     imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on;
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
     clim([min(Cin(:)),max(Cin(:))])
@@ -83,18 +83,18 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(6))
     imagesc(x,z,V); axis equal tight;  box on; cb = colorbar; hold on
-    if exist('indstruct','var')
-        for i = 1:size(indstruct,3)
-            contour(x,z,indstruct(:,:,i),1,'w','LineWidth',0.5);
+    if ~any(isnan(unit(:)))
+        for i = 1:size(unit,3)
+            contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(Vin(:)),max(Vin(:))])
+    clim([min(Vin(:)-eps),max(Vin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 
     % print figure and save data to file
     if svout
         print(fh2,[outdir,'/',runID,'/',runID,'_sol_',int2str(step/nout)],'-dpng','-r200')
-        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','indstruct');
+        save([outdir,'/',runID,'/',runID,'_',int2str(step/nout)],'x','z','u','w','p','f','T','C','V','dTdt','dCdt','dVdt','K','Drho','time','Ra','unit');
     end
 end
