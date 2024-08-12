@@ -68,7 +68,7 @@ if ~mod(step,nout)
             contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(Tin(:)),max(Tin(:))])
+    clim([min(Tin(:)-eps),max(Tin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(5))
@@ -78,7 +78,7 @@ if ~mod(step,nout)
             contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(Cin(:)),max(Cin(:))])
+    clim([min(Cin(:)-eps),max(Cin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(6))

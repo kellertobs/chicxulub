@@ -125,9 +125,9 @@ res_C = zeros(Nz,Nx);  % residual for salinity equation
 res_V = zeros(Nz,Nx);  % residual for vapour equation
 
 % initialise vapour phase
-Plith = 2600.*grav.*Z;
+Plith = 2500.*grav.*Z;
 Vq = vapour(T,C,Plith);
-V  = Vq;
+V  = Vq;  Vtop = mean(V(1,:)); Vbot = mean(V(end,:));
 phsr_V = 0.*V;
 
 end
@@ -172,11 +172,12 @@ ScV0 = 1./geomean(K(:))./rhol0./kV;
 LeC0 = kT./kC;
 LeV0 = kT./kV;
 RbC0 = abs(aT.*(Ttop-Tbot)) ./ abs(aC.*(Ctop-Cbot));
-RbV0 = abs(aT.*(Ttop-Tbot)) ./ (aV.*(max(V(:))-min(V(:))));
-RaT0 = rhol0 .* max(0,-aT.*(Ttop-Tbot))   .* grav .* geomean(K(:)) .* D ./ kT;
-RaC0 = rhol0 .* max(0,-aC.*(Ctop-Cbot))   .* grav .* geomean(K(:)) .* D ./ kC;
-RaV0 = rhol0 .* aV.*(max(V(:))-min(V(:))) .* grav .* geomean(K(:)) .* D ./ kV;
-Ra   = (RaT0+RaC0+RaV0).*ones(size(T));
+RbV0 = abs(aT.*(Ttop-Tbot)) ./ abs(aV.*(Vtop-Vbot));
+RaT0 = rhol0 .* -aT.*(Ttop-Tbot) .* grav .* geomean(K(:)) .* D ./ kT;
+RaC0 = rhol0 .* -aC.*(Ctop-Cbot) .* grav .* geomean(K(:)) .* D ./ kC;
+RaV0 = rhol0 .* -aV.*(Vtop-Vbot) .* grav .* geomean(K(:)) .* D ./ kV;
+Ra0  = RaT0+RaC0+RaV0;
+Ra   = Ra0.*ones(size(T));
 
 % prepare solution & residual arrays for VP solver
 w = zeros(Nz+1,Nx+2);   % vertical Darcy speed
@@ -224,7 +225,7 @@ if ~any(isnan(unit(:)))
         contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
-clim([min(f(:)),max(f(:))])
+clim([min(f(:)-eps),max(f(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(2))
@@ -234,7 +235,7 @@ if ~any(isnan(unit(:)))
         contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
-clim([min(C(:)),max(C(:))])
+clim([min(C(:)-eps),max(C(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(3))
@@ -244,7 +245,7 @@ if ~any(isnan(unit(:)))
         contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
     end
 end
-clim([min(T(:)),max(T(:))])
+clim([min(T(:)-eps),max(T(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(4))

@@ -31,35 +31,35 @@ aV      = 0.90;     % vapour-liquid density contrast [1/wt]
 LH      = 2.25e6/4200; % temperature jump from latent heat of vapourisation [C]
 
 % set initial condition parameters
-finit   = 'linear';  % initial condition: 'linear' or 'layer'
-f0      = 0.10;      % top/background initial porosity [vol]
-f1      = f0;        % base porosity [vol]  
-df      = 0.001;     % perturbation amplitude [vol]
+finit   = 'linear'; % initial condition: 'linear' or 'layer'
+f0      = 0.20;     % top/background initial porosity [vol]
+f1      = f0;       % base porosity [vol]  
+df      = 0.0;      % perturbation amplitude [vol]
 
-Tinit   = 'linear';  % initial condition: 'linear' or 'layer'
-Ttop    = 10;        % top boundary temperature
-Tbot    = 100;       % base boundary temperature
-T0      = Ttop;      % top/background initial temperature [C]
-T1      = Tbot;      % base initial temperature [C]
-dT      = -0.1;      % perturbation amplitude [C]
+Tinit   = 'linear'; % initial condition: 'linear' or 'layer'
+Ttop    = 10;       % top boundary temperature
+Tbot    = 200;      % base boundary temperature
+T0      = Ttop;     % top/background initial temperature [C]
+T1      = Tbot;     % base initial temperature [C]
+dT      =-Tbot/50;  % perturbation amplitude [C]
 
-Cinit   = 'linear';  % initial condition: 'linear' or 'layer'
-Ctop    = 0.010;     % top boundary concentration [wt]
-Cbot    = 0.001;     % base boundary concentration [wt]
-C0      = Ctop;      % top/background concentration  [wt]
-C1      = Cbot;      % base concentration [wt]
-dC      = 1e-4;      % perturbation amplitude [wt]
+Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
+Ctop    = 0.020;    % top boundary concentration [wt]
+Cbot    = 0.001;    % base boundary concentration [wt]
+C0      = Ctop;     % top/background concentration  [wt]
+C1      = Cbot;     % base concentration [wt]
+dC      = Ctop/50;  % perturbation amplitude [wt]
 
 zlay    = 0.5;       % relative depth of layer boundary
 wlay    = 0.02;      % relative width of layer boundary
 
-smth    = 10; % smoothness of initial fields
+smth    = 5;         % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'periodic'};
 BC_C    = {[Ctop,Cbot],'periodic'};
 BC_V    = {'closed','periodic'};
-BC_VP   = {'open','periodic'};
+BC_VP   = {'closed','periodic'};
 
 % set model timing parameters
 tend    = 1e11;      % model stopping time [s]
@@ -69,7 +69,7 @@ dt      = 1e9;       % initial time step
 % set numerical solver parameters
 CFL     = 0.75;      % Courant-Friedrich-Lewy number to limit time step size
 ADVN    = 'weno5';   % advection scheme
-nup     = 100;       % update TC-solution and check residuals every nup iter
+nup     = 50;        % update TC-solution and check residuals every nup iter
 tol     = 1e-8;      % residual tolerance for iterative solver
 maxit   = 1e4;       % maximum number of iterations
 alpha   = 0.99;      % step size for iterative solver

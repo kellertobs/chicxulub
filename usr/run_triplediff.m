@@ -1,10 +1,10 @@
 clear; close all; clc;
 par_default;
-    
+
 %addpath(genpath('/home/gary/Documents/Simulations/'))
 %% SET MODEL PARAMETERS
 
-runID   = 'layer';  % run identifier tag
+runID   = 'triplediff'; % run identifier tag
 outdir  = '../out'; % output directory 
 nout    = 10;       % print output every 'nout' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
@@ -18,7 +18,7 @@ D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
 mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
-k0      = 1e-10;    % background permeability [m2]
+k0      = 1e-11;    % background permeability [m2]
 n       = 3;        % permeability powerlaw [1]
 rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
@@ -31,33 +31,33 @@ aV      = 0.90;     % vapour-liquid density contrast [1/wt]
 LH      = 2.25e6/4200; % temperature jump from latent heat of vapourisation [C]
 
 % set initial condition parameters
-finit   = 'layer';  % initial condition: 'linear' or 'layer'
+finit   = 'linear'; % initial condition: 'linear' or 'layer'
 f0      = 0.20;     % top/background initial porosity [vol]
 f1      = f0;       % base porosity [vol]  
 df      = 0.0;      % perturbation amplitude [vol]
 
-Tinit   = 'layer';  % initial condition: 'linear' or 'layer'
+Tinit   = 'linear'; % initial condition: 'linear' or 'layer'
 Ttop    = 10;       % top boundary temperature
-Tbot    = 200;      % base boundary temperature
+Tbot    = 400;      % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
-dT      =-Tbot/100; % perturbation amplitude [C]
+dT      =-Tbot/50;  % perturbation amplitude [C]
 
-Cinit   = 'layer';  % initial condition: 'linear' or 'layer'
-Ctop    = 0.020;    % top boundary concentration [wt]
-Cbot    = 0.001;    % base boundary concentration [wt]
+Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
+Ctop    = 0.001;    % top boundary concentration [wt]
+Cbot    = 0.050;    % base boundary concentration [wt]
 C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
-dC      = Ctop/100; % perturbation amplitude [wt]
+dC      = Cbot/50;  % perturbation amplitude [wt]
 
-zlay    = 0.5;      % relative depth of layer boundary
-wlay    = 0.02;     % relative width of layer boundary
+zlay    = 0.5;       % relative depth of layer boundary
+wlay    = 0.02;      % relative width of layer boundary
 
-smth    = 5;        % smoothness of initial fields
+smth    = 5;         % smoothness of initial fields
 
 % set boundary conditions
-BC_T    = {'closed','periodic'};
-BC_C    = {'closed','periodic'};
+BC_T    = {[Ttop,Tbot],'periodic'};
+BC_C    = {[Ctop,Cbot],'periodic'};
 BC_V    = {'closed','periodic'};
 BC_VP   = {'closed','periodic'};
 
