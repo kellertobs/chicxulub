@@ -72,7 +72,8 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_T = (T-To)/dt - (dTdt + dTdto)/2;
 
-            T = T - res_T*dt/8;
+            upd_T = - gamma*res_T*dt + delta*upd_T;
+            T = T + upd_T;
 
             % set water to evolving reservoir
             if wat_evolve
@@ -99,7 +100,9 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            C = C - res_C*dt/8;
+            upd_C = - gamma*res_C*dt + delta*upd_C;
+            C = C + upd_C;
+
             C = max(0,min(1,C));  % saveguard min/max bounds
 
             % set water to evolving reservoir
@@ -131,7 +134,9 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
-            V = V - res_V*dt/8;
+            upd_V = - gamma*res_V*dt + delta*upd_V;
+            V = V + upd_V;
+
             V = max(0,min(1,V));  % saveguard min/max bounds
  
             % set water to evolving reservoir
@@ -171,7 +176,8 @@ while time <= tend && step <= Nt || max(Ra(:))<100
         res_p(air>=0.5) = 0;  % set air to zero
 
         % update pressure solution
-        p(2:end-1,2:end-1) = pi(2:end-1,2:end-1) - alpha.*res_p.*dtau + beta.*(pi(2:end-1,2:end-1)-pii(2:end-1,2:end-1));
+        upd_p = - alpha*res_p.*dtau + beta*upd_p;
+        p(2:end-1,2:end-1) = p(2:end-1,2:end-1) + upd_p;
         
         % apply pressure boundary conditions
         if strcmp(BC_VP{1},'closed')
@@ -196,9 +202,9 @@ while time <= tend && step <= Nt || max(Ra(:))<100
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
             resnorm = norm(res_p.*dtau.*(1-air-wat),2)./norm(p+1,2) ... 
-                    + norm(res_T.*dt/8.*(1-air-wat),2)./norm(T+1,2) ...
-                    + norm(res_C.*dt/8.*(1-air-wat),2)./norm(C+1,2) ...
-                    + norm(res_V.*dt/8.*(1-air-wat),2)./norm(V+1,2);
+                    + norm(res_T.*dt*gamma.*(1-air-wat),2)./norm(T+1,2) ...
+                    + norm(res_C.*dt*gamma.*(1-air-wat),2)./norm(C+1,2) ...
+                    + norm(res_V.*dt*gamma.*(1-air-wat),2)./norm(V+1,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);

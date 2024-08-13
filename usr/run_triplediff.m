@@ -16,20 +16,6 @@ Nz      = 200;      % num. grid size
 Nx      = Nz;
 D       = 1e3;      % phys. domain depth [m]
 
-% set physical parameters
-mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
-k0      = 1e-11;    % background permeability [m2]
-n       = 3;        % permeability powerlaw [1]
-rhol0   = 1000;     % fluid density [kg/m3]
-grav    = 9.81;     % gravity [m/s2]
-kC      = 1e-8;     % chemical diffusivity [m2/s]  
-kT      = 1e-6;     % thermal diffusivity [m2/s]
-kV      = 1e-7;     % vapour bubble diffusivity [m2/s]
-aT      = 1e-4;     % thermal expansivity [1/K]
-aC      = -1.1;     % chemical expansivity [1/wt]
-aV      = 0.90;     % vapour-liquid density contrast [1/wt]
-LH      = 2.25e6/4200; % temperature jump from latent heat of vapourisation [C]
-
 % set initial condition parameters
 finit   = 'linear'; % initial condition: 'linear' or 'layer'
 f0      = 0.20;     % top/background initial porosity [vol]
@@ -50,9 +36,6 @@ C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
 dC      = Cbot/50;  % perturbation amplitude [wt]
 
-zlay    = 0.5;       % relative depth of layer boundary
-wlay    = 0.02;      % relative width of layer boundary
-
 smth    = 5;         % smoothness of initial fields
 
 % set boundary conditions
@@ -66,14 +49,6 @@ tend    = 1e11;      % model stopping time [s]
 Nt      = 1e4;       % max number of time step
 dt      = 1e9;       % initial time step
 
-% set numerical solver parameters
-CFL     = 0.75;      % Courant-Friedrich-Lewy number to limit time step size
-ADVN    = 'weno5';   % advection scheme
-nup     = 50;        % update TC-solution and check residuals every nup iter
-tol     = 1e-8;      % residual tolerance for iterative solver
-maxit   = 1e4;       % maximum number of iterations
-alpha   = 0.99;      % step size for iterative solver
-beta    = 0.97;      % damping parameter for iterative solver
 
 %*****  RUN NAKHLA MODEL  *************************************************
 run('../src/main')

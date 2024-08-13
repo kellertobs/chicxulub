@@ -176,19 +176,18 @@ RbV0 = abs(aT.*(Ttop-Tbot)) ./ abs(aV.*(Vtop-Vbot));
 RaT0 = rhol0 .* -aT.*(Ttop-Tbot) .* grav .* geomean(K(:)) .* D ./ kT;
 RaC0 = rhol0 .* -aC.*(Ctop-Cbot) .* grav .* geomean(K(:)) .* D ./ kC;
 RaV0 = rhol0 .* -aV.*(Vtop-Vbot) .* grav .* geomean(K(:)) .* D ./ kV;
-Ra0  = RaT0+RaC0+RaV0;
-Ra   = Ra0.*ones(size(T));
+Ra   = ones(size(T));
 
 % prepare solution & residual arrays for VP solver
 w = zeros(Nz+1,Nx+2);   % vertical Darcy speed
 u = zeros(Nz+2,Nx+1);   % horizontal Darcy speed
 p = zeros(Nz+2,Nx+2);   % pore fluid pressure
-res_p = zeros(Nz,Nx)./dtau;  % residual for pressure equation
+res_p = zeros(Nz,Nx);  upd_p = res_p;  % residual and update for pressure equation
 
 % initialise timing parameters
-dTdt = 0.*T;
-dCdt = 0.*C;
-dVdt = 0.*V;
+dTdt = 0.*T;  upd_T = 0.*T;
+dCdt = 0.*C;  upd_C = 0.*C;
+dVdt = 0.*V;  upd_V = 0.*V;
 step = 0;
 time = 0;
 

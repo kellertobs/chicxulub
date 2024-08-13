@@ -88,7 +88,7 @@ if ~mod(step,nout)
             contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
         end
     end
-    clim([min(Vin(:)-eps),max(Vin(:)+eps)])
+    clim([min(V(:)-eps),max(V(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
     drawnow
 
