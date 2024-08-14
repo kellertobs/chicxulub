@@ -15,17 +15,17 @@ D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
 mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
-k0      = 1e-11;    % background permeability [m2]
+k0      = 1e-10;    % background permeability [m2]
 n       = 3;        % permeability powerlaw [1]
 rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
 kT      = 1e-6;     % thermal diffusivity [m2/s]
-kV      = 1e-7;     % vapour bubble diffusivity [m2/s]
+kV      = 1e-10;    % vapour bubble diffusivity [m2/s]
 aT      = 4e-4;     % thermal expansivity [1/K]
 aC      = -0.7;     % chemical expansivity [1/wt]
 aV      = 0.90;     % vapour-liquid density contrast [1/wt]
-LH      = 2.25e6/4200; % temperature jump from latent heat of vapourisation [C]
+LH      = 2.25e6/4.2e3; % temperature jump from latent heat of vapourisation [C]
 
 % set initial condition parameters
 finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
@@ -49,55 +49,6 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
-
-
-%% Make background temperature and porosity from an array (make array using ImgPrep_Temperature.m and ImgPrep_Porosity.m)
-% TArr   = load([indir 'Kardla_Right_200x200_TArray.mat']);
-% TArray = TArr.T_array2;
-% 
-% fArr = load([indir 'Kardla_Right_200x200_fArray.mat'])
-% fArray = fArr.f_array2;
-% 
-% 
-% %% Make lithologic units from binary images (2D arrays) prepared using ImgPrep_LithUnits.m
-% svt = imread(indir + "Kardla_Right_200x200_Lith_4.png"); % Binary image showing location of Suevite
-% plb = imread(indir + "Kardla_Right_200x200_Lith_3.png"); % Binary image showing location of Polymict Lithic Breccia
-% sed = imread(indir + "Kardla_Right_200x200_Lith_5.png"); % Binary image showing location of Sediments
-% wat = imread(indir + "Kardla_Right_200x200_Lith_2.png"); % Binary image showing location of Water
-% 
-% % Lithology parameters
-% f_svt = 0.3;      % Suevite porosity
-% T_svt = 600;      % Suevite Temperature
-% C_svt = 0.01;     % Suevite salinity
-% 
-% f_plb = 0.2;      % Polymict Lithic Breccia porosity
-% T_plb = 400;      % Polymict Lithic Breccia Temperature
-% C_plb = 0.01;     % Polymict Lithic Breccia salinity
-% 
-% f_mlb = 0.1;      % Monomict Lithic Breccia porosity
-% T_mlb = 400;      % Monomict Lithic Breccia Temperature
-% C_mlb = 0.01;     % Monomict Lithic Breccia salinity
-% 
-% f_imr = 0.05;     % Impact Melt Rock porosity
-% T_imr = 900;      % Impact Melt Rock Temperature
-% C_imr = 0.01;     % Impact Melt Rock salinity
-% 
-% f_sed =  0.2;     % Sediment porosity (volume fraction) 
-% T_sed =  100;     % Sediment Temperature
-% C_sed =  0.01;     % Sediment salinity (wt fraction - 0.2 = 20% of mass is salinity_ sea water is 3.5% (0.035)
-% 
-% f_wat =  0.5;     % Water porosity
-% T_wat =  100;     % Water Temperature
-% C_wat =  0.035;   % Water salinity (wt fraction - 0.2 = 20% of mass is salinity_ sea water is 3.5% (0.035)
-% 
-% indstruct = cat(3,   wat,   plb,   svt,   sed);
-% % fstruct   =       [f_wat, f_plb, f_svt, f_sed];   % porosity of structures (nan = do not set)
-% fstruct   =       [  nan,   nan,   nan,   nan];   % porosity of structures (nan = do not set)
-% % Tstruct   =       [T_wat, nan, T_svt, nan];      % temperature of structures (nan = do not set)
-% Tstruct   =       [  nan,   nan,   nan,   nan];
-% Cstruct   =       [C_wat, C_plb, C_svt, C_sed];   % salinity of structures (nan = do not set)
-% watind = 1;
-% Twat   = 10;
 
 T_air      = 10;
 T_wat      = 10;

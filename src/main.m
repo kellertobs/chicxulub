@@ -119,7 +119,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             Vq = vapour(T,C,Plith);
 
-            phsr_V = -(V - Vq)./5/(dt+1);
+            phsr_V = -(V - Vq)/5/dt;
 
             dVdt = advn_V + diff_V + phsr_V;
 

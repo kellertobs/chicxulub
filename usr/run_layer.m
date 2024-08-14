@@ -24,14 +24,14 @@ df      = 0.0;      % perturbation amplitude [vol]
 
 Tinit   = 'layer';  % initial condition: 'linear' or 'layer'
 Ttop    = 10;       % top boundary temperature
-Tbot    = 200;      % base boundary temperature
+Tbot    = 100;      % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
 dT      =-Tbot/100; % perturbation amplitude [C]
 
 Cinit   = 'layer';  % initial condition: 'linear' or 'layer'
 Ctop    = 0.001;    % top boundary concentration [wt]
-Cbot    = 0.010;    % base boundary concentration [wt]
+Cbot    = 0.020;    % base boundary concentration [wt]
 C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
 dC      = Cbot/100; % perturbation amplitude [wt]
