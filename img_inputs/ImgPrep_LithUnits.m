@@ -14,7 +14,7 @@ workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_Right_04_4.m');  % Use this parameter file
+run('../usr/par_Lonar_R_500x500.m');  % Use this parameter file
 
 % % Adjust these parameters if you're not happy with end pixelated images
 % (watching each step plot on the first figure can tell you where you have problems (might be over/undersmoothing things)
