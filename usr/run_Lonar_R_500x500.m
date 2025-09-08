@@ -7,6 +7,8 @@ par_Lonar_R_500x500;
 nout    = 20;       % print output every 'nop' steps
 svout   = 1;        % save figures and data to file (1)
 
+Nzi     = 200;
+Nxi     = 200;
 
 indir   = '../img_inputs/Lonar/Lonar_R_500x500/'; % input directory for arrays
 
@@ -35,7 +37,23 @@ bsmt = imread(indir + "Lonar_R_500x500_Lith_1.png"); % Binary image showing loca
 wat  = imread(indir + "Lonar_R_500x500_Lith_4.png"); % Binary image showing location of Water
 air  = imread(indir + "Lonar_R_500x500_Lith_7.png"); % Binary image showing location of Air
 
+% downsample image inputs
+ho = D./Nz;                       % grid spacing [m]
+W  = D*Nx/Nz;                     % domain width [m]
+xo = linspace(ho/2,W-ho/2,Nx);    % x-coordinate vector
+zo = linspace(ho/2,D-ho/2,Nz);    % z-coordinate vector
+[Xo,Zo] = meshgrid(xo,zo);           % coordinate arrays
 
+hi = D./Nzi;                      % grid spacing [m]
+W  = D*Nxi/Nzi;                   % domain width [m]
+xi = linspace(hi/2,W-hi/2,Nxi);   % x-coordinate vector
+zi = linspace(hi/2,D-hi/2,Nzi);   % z-coordinate vector
+[Xi,Zi] = meshgrid(xi,zi);           % coordinate arrays
+
+air = round(interp2(Xo,Zo,double(air),Xi,Zi));
+
+Nx = Nxi;
+Nz = Nzi;
 
 wat_evolve = false;              % evolve water as well-mixed reservoir; else keep T,C constant
 tau_eqlb   = 1*3600*24*365.25;  % water-air thermal equilibration time 
