@@ -26,6 +26,8 @@ projectName = runID % Specify project name so files will saved with some info
 foldername  = [outdir_ImgPrep projectName '_' num2str(Nx) 'x' num2str(Nz)];    % Specify foldername for output
 mkdir (sprintf(foldername));    % Make the specified directory
 
+foldername2 = fullfile(foldername, 'LithClusters');    % Specify foldername for output
+mkdir (sprintf(foldername2));    % Make the specified directory
 
 %% Make a figure to plot each step of the processing process
 f2        = figure;                           % Make a figure for plotting each step of the process
@@ -155,7 +157,7 @@ end
 %% Save images
 for l = 1:nUnits_Lith
     imgTitle = ['Lith_' num2str(l)];  % Make a title for the image that tells you which cluster it is
-    filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
+    filename = [foldername2 '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
     imwrite(c{l}, filename);
     msg1 = ['Saved_' imgTitle '.png'];
     disp(msg1)
@@ -168,6 +170,12 @@ for l = 1:nUnits_Lith
 %     disp(msg2)
 end
 
+imgTitle = ['Original'];  % Make a title for the image
+filename = [foldername2 '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
+imwrite(imgCrp, filename);
+msg1 = ['Saved_' imgTitle '.png'];
+disp(msg1)
+
 
 %% Plot each unit/cluster on a new figure
 f1 = figure;    % Make a figure for plotting all of the final units
@@ -177,7 +185,7 @@ col = ceil((nUnits_Lith+1)/3);
 
 figure(f1);         % Select Figure 1 to plot each cluster on one figure
 subplot(3,col,1);     % Plot cropped original image to the first position on Figure 1
-imshow(img)
+imshow(imgCrp)
 title("Original RGB");  % Title image
 drawnow
 

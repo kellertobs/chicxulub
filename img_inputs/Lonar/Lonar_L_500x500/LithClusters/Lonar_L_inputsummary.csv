@@ -1,0 +1,8 @@
+UnitName,FileName,Porosity_f,Temperature_T,Salinity_C
+Basement,Lonar_L_500x500_Lith_1,0.01,300,0.01
+Basalt,Lonar_L_500x500_Lith_2,0.01,250,0.01
+Water,Lonar_L_500x500_Lith_3,0.01,10,0.03
+Powdered Basalt,Lonar_L_500x500_Lith_4,0.02,200,0.01
+Sediment,Lonar_L_500x500_Lith_5,0.02,20,0.02
+Coarse Breccia,Lonar_L_500x500_Lith_6,0.02,200,0.01
+Powdered Basalt,Lonar_L_500x500_Lith_7,0.02,200,0.01

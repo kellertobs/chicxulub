@@ -13,11 +13,11 @@ workspace;	% Make sure the workspace panel is showing.
 
 %% SET MODEL PARAMETERS
 
-runID   = 'Lonar_R'; % run identifier tag
+runID   = 'Lonar_L'; % run identifier tag
 
 % set domain parameters
-Nz      = 400;       % num. grid size in z-direction
-Nx      = 400;       % num. grid size in z-direction
+Nz      = 500;       % num. grid size in z-direction
+Nx      = 500;       % num. grid size in z-direction
 
 
 %% Set conditions for Img_Prep files
@@ -36,7 +36,7 @@ nUnits_T       = 8;                                                 % Need to sp
 %     - Top right of image: (0.5, 0, 0.5, 0.5)
 %     - Top left of image:  (0, 0, 0.5, 0.5)
 
-x_crp = 0.5;  
+x_crp = 0;  
 y_crp = 0;
 w_crp = 0.5;
 h_crp = 0.5;
