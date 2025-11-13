@@ -265,15 +265,65 @@ for i = 1:numRows
     T_array2 = T_array2 + T_array{i};
 end
 
-% Display the result
-figure();
-imagesc(T_array2);
-colorbar;
-title('Summed Temperature Array');
+% Display the result and confirm satisfaction with the temperature map
+happy = false;   % flag for user satisfaction
 
+while ~happy
+    % Compute and display the summed temperature array
+    T_array2 = 0;
+    for i = 1:numRows
+        T_array2 = T_array2 + T_array{i};
+    end
 
-%% Save array of temperatures
+    figure();
+    imagesc(T_array2);
+    colorbar;
+    title('Summed Temperature Array');
+    axis equal tight;
+    drawnow;
 
+    % Ask user if they are happy
+    choice = questdlg('Are you happy with this temperature distribution?', ...
+                      'Confirm Temperature Map', ...
+                      'Yes, save and continue', 'No, re-enter temperatures', 'Cancel', ...
+                      'Yes, save and continue');
+
+    switch choice
+        case 'Yes, save and continue'
+            happy = true;  % exit loop and save
+        case 'No, re-enter temperatures'
+            % Re-run the input dialog for new temperatures
+            userInput = inputdlg(prompts, 'Re-enter Temperatures', [1 100], defaultData);
+
+            % If user cancels during re-entry, exit gracefully
+            if isempty(userInput)
+                disp('User canceled input.');
+                return;
+            end
+
+            % Save new defaults
+            defaultData = userInput;
+            save(memoryFile, 'defaultData');
+
+            % Recalculate T_array based on new inputs
+            for r = 1:numRows
+                T_val = str2double(userInput{r});
+                if isnan(T_val)
+                    error('Invalid numeric input at row %d.', r);
+                end
+                assignin('base', sprintf('T_val_%d', r), T_val);
+                fprintf('T_val_%d = %g\n', r, T_val);
+                T_array{r} = T_val * c{r};
+            end
+
+        case 'Cancel'
+            disp('User canceled process.');
+            return;
+    end
+end
+
+% === Save temperature array once user is satisfied ===
 filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_TArray.mat'];    % Specify filename
-save([filename],'T_array2')
+save(filename, 'T_array2');
+fprintf('Temperature array saved to %s\n', filename);
 
