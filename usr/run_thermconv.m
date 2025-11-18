@@ -1,18 +1,19 @@
 clear; close all; clc;
+LASTN = maxNumCompThreads(1)
 par_default;
 
 %addpath(genpath('/home/gary/Documents/Simulations/'))
 %% SET MODEL PARAMETERS
 
-runID   = 'linear_n02'; % run identifier tag
+runID   = 'Ra1e2'; % run identifier tag
 outdir  = '../out'; % output directory 
 nout    = 20;       % print output every 'nout' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
-svout   = 0;        % save figures and data to file (1)
+svout   = 1;        % save figures and data to file (1)
 bnchm   = 0;        % run benchmark
 
 % set domain parameters
-Nz      = 200;      % num. grid size
+Nz      = 100;      % num. grid size
 Nx      = Nz;
 D       = 1e3;      % phys. domain depth [m]
 
@@ -24,10 +25,10 @@ df      = 0.0;      % perturbation amplitude [vol]
 
 Tinit   = 'linear'; % initial condition: 'linear' or 'layer'
 Ttop    = 10;       % top boundary temperature
-Tbot    = 100;      % base boundary temperature
-T0      = Ttop;     % top/background initial temperature [C]
-T1      = Tbot;     % base initial temperature [C]
-dT      =-Tbot/50;  % perturbation amplitude [C]
+Tbot    = 72.5;     % base boundary temperature
+T0      = (Ttop+Tbot)/2; % top/background initial temperature [C]
+T1      = (Ttop+Tbot)/2; % base initial temperature [C]
+dT      =-T0/50;    % perturbation amplitude [C]
 
 Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
 Ctop    = 0.0;      % top boundary concentration [wt]
@@ -36,8 +37,11 @@ C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
 dC      = Cbot/50;  % perturbation amplitude [wt]
 
-k0      = 1e-9;     % background permeability [m2]
+aT      = 1e-4;     % thermal expansivity [1/K]
+k0      = 2e-11;    % background permeability [m2]
+grav    = 10;       % gravity [m/s2]
 smth    = 5;        % smoothness of initial fields
+bnd_w   = 25;
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'periodic'};

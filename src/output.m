@@ -12,7 +12,7 @@ if ~mod(step,nout)
     colormap(ocean);
 
     axh = 6.00; axw = 7.50; %   Height and width of axis
-    ahs = 1.50; avs = 1.00; %   Horzontal and vertial distance between axis
+    ahs = 1.50; avs = 1.20; %   Horzontal and vertial distance between axis
     axb = 1.50; axt = 2.00; %   Bottom and top;Size of page relative to axis
     axl = 1.75; axr = 0.90; %   Right and left; spacing of axis to page
 
@@ -40,6 +40,7 @@ if ~mod(step,nout)
     end
     clim([min(-w(:).*3600),max(-w(:).*3600)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation z-speed [m/hr]',TX{:},FS{:})
+    ylabel('Depth [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(2))
     imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar; hold on;
@@ -70,6 +71,8 @@ if ~mod(step,nout)
     end
     clim([min(Tin(:)-eps),max(Tin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
+    ylabel('Depth [m]',TX{:},FS{:});
+    xlabel('Distance [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(5))
     imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on;
@@ -80,6 +83,7 @@ if ~mod(step,nout)
     end
     clim([min(Cin(:)-eps),max(Cin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
+    xlabel('Distance [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(6))
     imagesc(x,z,V); axis equal tight;  box on; cb = colorbar; hold on
@@ -90,6 +94,7 @@ if ~mod(step,nout)
     end
     clim([min(V(:)-eps),max(V(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
+    xlabel('Distance [m]',TX{:},FS{:});
     drawnow
 
     % print figure and save data to file

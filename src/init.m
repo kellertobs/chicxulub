@@ -111,9 +111,11 @@ C = C + dC.*rp;
 % enforce bounds on porosity
 f = max(1e-3,min(1-1e-3,f));
 
-% adjust boundary layer to top boundary conditions
-T = T + (Ttop-T).*exp(-max(0,Z)/h);
-C = C + (Ctop-C).*exp(-max(0,Z)/h);
+% adjust boundary layers
+T = T + (Ttop-T).*exp(-max(0,  Z-h/2)/bnd_w);
+T = T + (Tbot-T).*exp(-max(0,D-Z-h/2)/bnd_w);
+C = C + (Ctop-C).*exp(-max(0,  Z-h/2)/bnd_w);
+C = C + (Cbot-C).*exp(-max(0,D-Z-h/2)/bnd_w);
 
 % adjustment for treatment of air and water
 f = (1-wat-air).*f + wat.*0.5   + air.*1.0  ;
