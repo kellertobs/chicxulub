@@ -1,11 +1,14 @@
-% --- Select folder ---
-folderPath = uigetdir(pwd, 'Select Folder Containing Image Files');
-if folderPath == 0
-    error('No folder selected.');
-end
+% % --- Select folder ---
+% folderPath = uigetdir(pwd, 'Select Folder Containing Image Files');
+% if folderPath == 0
+%     error('No folder selected.');
+% end
+% 
+% indir = folderPath;
 
+folderPath = sprintf([indir 'LithClusters']); % input directory for arrays
 indir = folderPath;
-
+ 
 %% Check for existing summary table
 existingSummaryFile = dir(fullfile(folderPath, '*_inputsummary.csv'));
 

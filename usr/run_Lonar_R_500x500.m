@@ -3,7 +3,7 @@ clear; close all; clc;
 par_default;
 
 % SET MODEL PARAMETERS
-runID   = 'Lonar_L'; % run identifier tag
+runID   = 'Lonar_R'; % run identifier tag
 nout    = 20;       % print output every 'nop' steps
 svout   = 1;        % save figures and data to file (1)
 
@@ -15,11 +15,11 @@ Nzi     = 200;      % num. grid size in z-direction
 Nxi     = 200;      % num. grid size in x-direction
 D       = 1e3;      % physical domain depth [m]
 
-indir   = '../img_inputs/Lonar/Lonar_L_500x500/'; % input directory for arrays
+indir   = '../img_inputs/Lonar/Lonar_R_500x500/'; % input directory for arrays
 outdir  = '../out'; % output directory 
 
 %% Make background temperature and porosity from an array (make array using ImgPrep_Temperature.m and ImgPrep_Porosity.m)
-TArr   = load([indir 'Lonar_L_500x500_TArray.mat']);
+TArr   = load([indir 'Lonar_R_500x500_TArray.mat']);
 TArray = TArr.T_array2;
 
 addpath ../src
@@ -79,10 +79,10 @@ TArray = interp2(Xo,Zo,double(TArray),Xi,Zi);
 
 
 wat_evolve = false;              % evolve water as well-mixed reservoir; else keep T,C constant
-tau_eqlb   = 1*3600*24*365.25;  % water-air thermal equilibration time 
+tau_eqlb   = 1*3600*24*365.25;   % water-air thermal equilibration time 
 
-wat(1,:)   = 0;                 % input image has wrong values along topmost row, please fix
-air(1,:)   = 1;                 % input image has wrong values along topmost row, please fix
+wat   = zeros(Nzi,Nxi);                 % input image has wrong values along topmost row, please fix
+air   = zeros(Nzi,Nxi);                 % input image has wrong values along topmost row, please fix
 
 %% --- INITIALIZE STORAGE ---
 numLith = height(summaryTable);
@@ -97,7 +97,7 @@ for j = 1:numLith
 
     % --- Read lithology image file ---
     lithFile = summaryTable.FileName{j};
-    lithPath = fullfile(indir, lithFile);
+    lithPath = fullfile(folderPath, lithFile);
 
     % Try to find a valid image extension if needed
     if ~isfile(lithPath)
@@ -141,14 +141,17 @@ for j = 1:numLith
     fstruct(j) = summaryTable.Porosity_f(j);
     Tstruct(j) = summaryTable.Temperature_T(j);
     Cstruct(j) = summaryTable.Salinity_C(j);
+
+    if strcmp(summaryTable.UnitName{j}, 'Water')
+        wat = lith_j;
+    end
+
+    if strcmp(summaryTable.UnitName{j}, 'Air')
+        air = lith_j;
+    end
+
+
 end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Make special case for water and air variables. HERE. 
-% If UnitName.i = 'Water' then T_wat = T.i
-% If UnitName.i = 'Air' then T_air = T.i
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Nx = Nxi;
 Nz = Nzi;
