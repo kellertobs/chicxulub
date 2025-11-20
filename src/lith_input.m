@@ -1,16 +1,8 @@
-% % --- Select folder ---
-% folderPath = uigetdir(pwd, 'Select Folder Containing Image Files');
-% if folderPath == 0
-%     error('No folder selected.');
-% end
-% 
-% indir = folderPath;
-
 folderPath = sprintf([indir 'LithClusters']); % input directory for arrays
 indir = folderPath;
  
 %% Check for existing summary table
-existingSummaryFile = dir(fullfile(folderPath, '*_inputsummary.csv'));
+existingSummaryFile = dir(fullfile(folderPath, [runID '_inputsummary.csv']));
 
 useExisting = false;
 previousData = [];
@@ -121,8 +113,8 @@ for b = 1:numel(baseFiles)
         % Input dialog for this overlay
         prompt = { ...
             sprintf('Enter Unit Name for "%s":', overlayName), ...
-            'Enter Porosity (f) [volume fraction]:', ...
-            'Enter Temperature (T) [degrees C]:', ...
+            'Enter Porosity (f) [volume fraction, 0.0001 to 1]:', ...
+            'Enter Temperature (T) [degrees C]. If using T array enter "NaN":', ...
             'Enter Salinity (C) [weight fraction - sea water = 0.035 (3.5% of mass is salt)]:'};
         dlgTitle = sprintf('Enter/Confirm Data for "%s"', overlayCandidates(o).name);
         dims = [1 60];              
@@ -143,10 +135,6 @@ for b = 1:numel(baseFiles)
         if isempty(unitName)
             close(fig);
             error('Unit name missing for file "%s".', overlayName);
-        end
-        if any(isnan([f_val, T_val, C_val]))            %% Think I need to adjust this so that NaN is possible to decide to use T array instead of this input HERE
-            close(fig);
-            error('Non-numeric Porosity, Temperature, or Salinity for file "%s".', overlayName);
         end
 
         % --- Assign workspace variables ---

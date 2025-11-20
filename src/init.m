@@ -80,8 +80,17 @@ if exist('wat','var')
     C (wat==1) = C_wat;
     wat_surf   = diff(wat,1)>0;
     wat_base   = diff(wat,1)<0;
-    [jbed, ibed] = find(diff(wat(icz,icx))<0);
-    sub2ind     = sub2ind(size(wat),jbed,ibed);
+%     [jbed, ibed] = find(diff(wat(icz,icx))<0);
+%     sub2ind     = sub2ind(size(wat),jbed,ibed);
+    % Find drops in the submatrix    %% HERE
+    [jbed_local, ibed_local] = find(diff(wat(icz, icx)) < 0);
+    
+    % Convert local indices back to global wat indices
+    jbed = icz(jbed_local);
+    ibed = icx(ibed_local);
+    
+    % Now safe to compute linear indices
+    idx = sub2ind(size(wat), jbed, ibed);     %% TO HERE
 else
     wat = zeros(Nz,Nx);
 end
