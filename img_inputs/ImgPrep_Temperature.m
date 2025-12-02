@@ -265,6 +265,8 @@ for i = 1:numRows
     T_array2 = T_array2 + T_array{i};
 end
 
+
+
 % Display the result and confirm satisfaction with the temperature map
 happy = false;   % flag for user satisfaction
 
