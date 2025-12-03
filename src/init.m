@@ -132,6 +132,11 @@ Vq = vapour(T,C,Plith);
 V  = Vq;  Vtop = mean(V(1,:)); Vbot = mean(V(end,:));
 phsr_V = 0.*V;
 
+% initialise melt phase
+mq = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
+m  = mq;
+phsr_m = 0.*m;
+
 end
 
 % store initial fields
@@ -148,23 +153,21 @@ if wat_evolve
 end
 
 % get permeability [m2]
-k = k0 * f(icz,icx).^n;  % Kozeny-Carman relationship
+kB = k0 * f.^n;                                                            % Kozeny-Carman relation
+k  = 10.^(log10(kD) + (log10(kB)-log10(kD)) .* 1./(1+exp(-(BDT-T)./100))); % reduce permeability in ductile region
 
 % get Darcy coefficient [m2/Pas]
 K  = k/mu;
-Kz = (K(1:end-1,:)+K(2:end,:))./2;
-Kx = (K(:,1:end-1)+K(:,2:end))./2;
+Kz = (K(icz(1:end-1),:)+K(icz(2:end),:))./2;
+Kx = (K(:,icx(1:end-1))+K(:,icx(2:end)))./2;
 
 % get iterative step size for p-solution
-dtau = (h/2)^2./K(2:end-1,2:end-1);
+dtau = (h/2)^2./K;
 
 % update density difference
-rho  = rhol0.*(1 - aT.*T(icz,icx) ...
-                 - aC.*C(icz,icx) ...
-                 - aV.*V(icz,icx) );% .* (1-air(icz,icx));
-Drho = rho - mean(rho,2);
-% Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
-Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+rho   = rhol0.*(1 - aT.*T - aC.*C - aV.*V );
+Drho  = rho - mean(rho,2);
+Drhoz = (Drho(icz(1:end-1),:)+Drho(icz(2:end),:))./2;
 if bnchm; Drhoz = Drho_mms(:,:,step+1); end
 
 % get dimensionless numbers
@@ -181,10 +184,19 @@ RaV0 = rhol0 .* -aV.*(Vtop-Vbot) .* grav .* geomean(K(:)) .* D ./ kV;
 Ra   = ones(size(T));
 
 % prepare solution & residual arrays for VP solver
-w = zeros(Nz+1,Nx+2);   % vertical Darcy speed
-u = zeros(Nz+2,Nx+1);   % horizontal Darcy speed
+w = zeros(Nz+1,Nx);     % vertical Darcy speed
+u = zeros(Nz,Nx+1);     % horizontal Darcy speed
 p = zeros(Nz+2,Nx+2);   % pore fluid pressure
 res_p = zeros(Nz,Nx);  upd_p = res_p;  % residual and update for pressure equation
+
+rho_est.T = 0.9.*ones(Nz*Nx,1); rho_mean.T = 0.9;
+rho_est.C = 0.9.*ones(Nz*Nx,1); rho_mean.C = 0.9;
+rho_est.V = 0.9.*ones(Nz*Nx,1); rho_mean.V = 0.9;
+rho_est.p = 0.9.*ones(Nz*Nx,1); rho_mean.p = 0.9;
+XHST.T = zeros(Nz*Nx, itpar.anda.m+1);  RHST.T = zeros(Nz*Nx, itpar.anda.m+1);
+XHST.C = zeros(Nz*Nx, itpar.anda.m+1);  RHST.C = zeros(Nz*Nx, itpar.anda.m+1);
+XHST.V = zeros(Nz*Nx, itpar.anda.m+1);  RHST.V = zeros(Nz*Nx, itpar.anda.m+1);
+XHST.p = zeros(Nz*Nx, itpar.anda.m+1);  RHST.p = zeros(Nz*Nx, itpar.anda.m+1);
 
 % initialise timing parameters
 dTdt = 0.*T;  upd_T = 0.*T;

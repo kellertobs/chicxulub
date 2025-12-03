@@ -36,6 +36,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
     To    = T;
     Co    = C;
     Vo    = V;
+    mqo   = mq;
     dTdto = dTdt;
     dCdto = dCdt;
     dVdto = dVdt;
@@ -53,13 +54,16 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             % UPDATE TEMPERATURE SOLUTION (SEMI-IMPLICIT UPDATE)
             
-            advn_T = - advect(T,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_T);
+            advn_T = - advect(T,u,w,h,{ADVN,'vdf'},[1,2],BC_T);
 
             diff_T = diffus(T,kT,h,[1,2],BC_T);
 
             eqlb_T = -(T_wat-T_air)./tau_eqlb.*wat;
 
-            dTdt = advn_T + diff_T + eqlb_T - phsr_V*LH;
+            mq     = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
+            phsr_m = -(mq - mqo)/5/dt;
+
+            dTdt   = advn_T + diff_T + eqlb_T - phsr_V*LHv - phsr_m*LHm;
 
             if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
 
@@ -72,8 +76,8 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_T = (T-To)/dt - (dTdt + dTdto)/2;
 
-            upd_T = - gamma*res_T*dt + delta*upd_T;
-            T = T + upd_T;
+            [T,XHST.T,RHST.T,rho_est.T,rho_mean.T] = iterate(T,res_T*dt,rho_est.T,rho_mean.T,XHST.T,RHST.T,itpar,step*it);
+
 
             % set water to evolving reservoir
             if wat_evolve
@@ -83,11 +87,11 @@ while time <= tend && step <= Nt || max(Ra(:))<100
             % UPDATE CONCENTRATION SOLUTION (SEMI-IMPLICIT UPDATE)
             
             % calculate salinity advection
-            advn_C = - advect(C,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_C);
+            advn_C = - advect(C,u,w,h,{ADVN,'vdf'},[1,2],BC_C);
 
             diff_C = diffus(C,kC,h,[1,2],BC_C);
 
-            dCdt = advn_C + diff_C;
+            dCdt   = advn_C + diff_C;
             
             if bnchm; dCdt = dCdt + src_C_mms(:,:,step+1); end
 
@@ -100,8 +104,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            upd_C = - gamma*res_C*dt + delta*upd_C;
-            C = C + upd_C;
+            [C,XHST.C,RHST.C,rho_est.C,rho_mean.C] = iterate(C,res_C*dt,rho_est.C,rho_mean.C,XHST.C,RHST.C,itpar,step*it);
 
             C = max(0,min(1,C));  % saveguard min/max bounds
 
@@ -113,7 +116,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
             % UPDATE VAPOUR SOLUTION (SEMI-IMPLICIT UPDATE)
             
             % calculate vapour advection
-            advn_V = - advect(V,u(2:end-1,:),w(:,2:end-1),h,{ADVN,'vdf'},[1,2],BC_V);
+            advn_V = - advect(V,u,w,h,{ADVN,'vdf'},[1,2],BC_V);
 
             diff_V = diffus(V,kV,h,[1,2],BC_V);
 
@@ -134,8 +137,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
-            upd_V = - gamma*res_V*dt + delta*upd_V;
-            V = V + upd_V;
+            [V,XHST.V,RHST.V,rho_est.V,rho_mean.V] = iterate(V,res_V*dt,rho_est.V,rho_mean.V,XHST.V,RHST.V,itpar,step*it);
 
             V = max(0,min(1,V));  % saveguard min/max bounds
  
@@ -145,13 +147,22 @@ while time <= tend && step <= Nt || max(Ra(:))<100
             end
 
             % update density difference
-            rho  = rhol0.*(1 - aT.*T(icz,icx) ...
-                             - aC.*C(icz,icx) ...
-                             - aV.*V(icz,icx) );% .* (1-air(icz,icx));
-            Drho = rho - mean(rho,2);
-            % Drho(air(icz,icx)+wat(icz,icx)>=0.5) = 0;  % set air and water to zero
-            Drhoz = (Drho(1:end-1,:)+Drho(2:end,:))./2;
+            rho   = rhol0.*(1 - aT.*T - aC.*C - aV.*V );
+            Drho  = rho - mean(rho,2);
+            Drhoz = (Drho(icz(1:end-1),:)+Drho(icz(2:end),:))./2;
             if bnchm; Drhoz = Drho_mms(:,:,step+1); end
+
+            % update permeability
+            kB = k0 * f.^n;                                                            % Kozeny-Carman relation
+            k  = 10.^(log10(kD) + (log10(kB)-log10(kD)) .* 1./(1+exp(-(BDT-T)./100))); % reduce permeability in ductile region
+
+            % update Darcy coefficient
+            K  = k/mu;
+            Kz = (K(icz(1:end-1),:)+K(icz(2:end),:))./2;
+            Kx = (K(:,icx(1:end-1))+K(:,icx(2:end)))./2;
+
+            % get iterative step size for p-solution
+            dtau = (h/2)^2./K;
         end
 
         % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
@@ -160,28 +171,27 @@ while time <= tend && step <= Nt || max(Ra(:))<100
         pii = pi; pi = p;
         
         % calculate pressure gradient [Pa/m]
-        gradPz = diff(p,1,1)./h;  % vertical gradient
-        gradPx = diff(p,1,2)./h;  % horizontal gradient
+        gradPz = diff(p(:,2:end-1),1,1)./h;  % vertical gradient
+        gradPx = diff(p(2:end-1,:),1,2)./h;  % horizontal gradient
 
         % calculate Darcy segregation speed [m/s]
         w = - Kz .* (gradPz - Drhoz.*grav);% .* (watfz==0);
         u = - Kx .* (gradPx              );% .* (watfx==0);
         
-        w(2:end,:) = w(2:end,:).*(1-air(:,icx));  % set air to zero flow
+        w(2:end,:) = w(2:end,:).*(1-air);  % set air to zero flow
 
         % calculate residual of pressure equation
-        res_p = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
+        res_p = diff(w,1,1)./h + diff(u,1,2)./h;
         if bnchm; res_p = res_p - src_p_mms(:,:,step+1); end
 
         res_p(air>=0.5) = 0;  % set air to zero
 
         % update pressure solution
-        upd_p = - alpha*res_p.*dtau + beta*upd_p;
-        p(2:end-1,2:end-1) = p(2:end-1,2:end-1) + upd_p;
+        [p(2:end-1,2:end-1),XHST.p,RHST.p,rho_est.p,rho_mean.p] = iterate(p(2:end-1,2:end-1),res_p*dt,rho_est.p,rho_mean.p,XHST.p,RHST.p,itpar,step*it);
         
         % apply pressure boundary conditions
         if strcmp(BC_VP{1},'closed')
-            p([1 end],:) = p([2 end-1],:) + [-1;1].*Drhoz([1 end],:).*grav.*h;
+            p([1 end],:) = p([2 end-1],:) + [-1;1].*Drhoz([1 end],icx).*grav.*h;
         else        
             p([1 end],:) = 0;
         end
@@ -201,10 +211,10 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            resnorm = norm(upd_p,2)./norm(p+1,2) ... 
-                    + norm(upd_T,2)./norm(T+1,2) ...
-                    + norm(upd_C,2)./norm(C+1,2) ...
-                    + norm(upd_V,2)./norm(V+1,2);
+            resnorm = norm(RHST.p(:,end))./norm(p+eps);% ... 
+                    % + norm(upd_T,2)./norm(T+1,2) ...
+                    % + norm(upd_C,2)./norm(C+1,2) ...
+                    % + norm(upd_V,2)./norm(V+1,2);
 
             % report convergence
             fprintf(1,'---  %d,  %e\n',it,resnorm);
@@ -222,8 +232,8 @@ while time <= tend && step <= Nt || max(Ra(:))<100
     fprintf(1,'\n\n      time to solution = %1.3e [s] \n\n',soltime);
 
     % update dimensionless numbers
-    Vel = sqrt(((w(1:end-1,2:end-1)+w(2:end,2:end-1))/2).^2 ...
-             + ((u(2:end-1,1:end-1)+u(2:end-1,2:end))/2).^2);
+    Vel = sqrt(((w(1:end-1,:)+w(2:end,:))/2).^2 ...
+             + ((u(:,1:end-1)+u(:,2:end))/2).^2);
     Ra = Vel.*D./(kT+kC+kV); 
 
 

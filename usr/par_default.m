@@ -15,8 +15,10 @@ D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
 mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
-k0      = 1e-10;    % background permeability [m2]
+k0      = 1e-11;    % background permeability [m2]
 n       = 3;        % permeability powerlaw [1]
+BDT     = 400;      % brittle-ductile transition Temperature [C]
+kD      = 1e-19;    % ductile permeability [m2]
 rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
@@ -25,7 +27,11 @@ kV      = 1e-10;    % vapour bubble diffusivity [m2/s]
 aT      = 4e-4;     % thermal expansivity [1/K]
 aC      = -0.7;     % chemical expansivity [1/wt]
 aV      = 0.90;     % vapour-liquid density contrast [1/wt]
-LH      = 2.25e6/4.2e3; % temperature jump from latent heat of vapourisation [C]
+LHv     = 2.25e6/4.2e3; % temperature jump from latent heat of vapourisation [C]
+LHm     = 5.50e5/1.2e3; % temperature jump from latent heat of melting [C]
+Tsol    = 800;      % magma solidus temperature [C]
+Tliq    = 1200;     % magma liquidus temperature [C]
+pTm     = 0.75;     % Temp-melt powerlaw coefficient
 
 % set initial condition parameters
 finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
@@ -49,6 +55,7 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
+bnd_w   = 25;       % initial boundary layer thickness
 
 T_air      = 10;
 T_wat      = 10;

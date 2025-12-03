@@ -41,7 +41,7 @@ aT      = 1e-4;     % thermal expansivity [1/K]
 k0      = 2e-11;    % background permeability [m2]
 grav    = 10;       % gravity [m/s2]
 smth    = 5;        % smoothness of initial fields
-bnd_w   = 25;
+bnd_w   = 25;       % initial boundary layer thickness
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'periodic'};

@@ -32,7 +32,7 @@ if ~mod(step,nout)
     sgtitle(sprintf('Time elapsed %.3f yr', time/3600/24/365.25),TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(1))
-    imagesc(x,z,-w(2:end-1,:).*3600); axis equal tight; box on; cb = colorbar; hold on;
+    imagesc(x,z,-w.*3600); axis equal tight; box on; cb = colorbar; hold on;
     if ~any(isnan(unit(:)))
         for i = 1:size(unit,3)
             contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
@@ -43,7 +43,7 @@ if ~mod(step,nout)
     ylabel('Depth [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(2))
-    imagesc(x,z,u(:,2:end-1).*3600); axis equal tight;  box on; cb = colorbar; hold on;
+    imagesc(x,z,u.*3600); axis equal tight;  box on; cb = colorbar; hold on;
     if ~any(isnan(unit(:)))
         for i = 1:size(unit,3)
             contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
