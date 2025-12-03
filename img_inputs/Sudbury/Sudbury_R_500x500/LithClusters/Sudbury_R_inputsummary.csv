@@ -1,0 +1,14 @@
+UnitName,FileName,Porosity_f,Temperature_T,Salinity_C
+Archean Gneiss,Sudbury_R_500x500_Lith_1,0.1,NaN,0.01
+Archean Granite Greenstone (Fractured),Sudbury_R_500x500_Lith_10,0.1,NaN,0.01
+Archean Gneiss (Fractured),Sudbury_R_500x500_Lith_11,0.1,NaN,0.01
+Mantle,Sudbury_R_500x500_Lith_12,0.1,NaN,0.01
+Mantle (Fractured),Sudbury_R_500x500_Lith_13,0.1,NaN,0.01
+Air,Sudbury_R_500x500_Lith_2,0,NaN,0
+Archean Granite Greenstone,Sudbury_R_500x500_Lith_3,0.1,NaN,0.01
+Impact Melt Complex,Sudbury_R_500x500_Lith_4,0.1,NaN,0.1
+Huronian Supergroup (Fractured),Sudbury_R_500x500_Lith_5,0.1,NaN,0.01
+Lower Crust,Sudbury_R_500x500_Lith_6,0.1,NaN,0.01
+Water,Sudbury_R_500x500_Lith_7,0.99,NaN,0.1
+Lower Crust (Fractured),Sudbury_R_500x500_Lith_8,0.1,NaN,0.01
+Huronian Supergroup,Sudbury_R_500x500_Lith_9,0.1,NaN,0.01

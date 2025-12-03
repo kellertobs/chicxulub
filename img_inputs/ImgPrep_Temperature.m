@@ -1,16 +1,20 @@
 %% This is a workbook to create inputs for run_impact.m so that you can have complex temperature distributions
+% % Crop image to dimensions you want (differentiate between full crater and half crater)
+% % Segment a temperature distribution cross section into units (nUnits_T) using k means
+% % Save nUnits binary images where units are True and all other space is False
+
 
 
 %% Initial space set up
 clc;	% Clear command window.
-clear;	% Delete all variables.
+% clear;	% Delete all variables.
 close all;	% Close all figure windows except those created by imtool.
 imtool close all;	% Close all figure windows created by imtool.
 workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_R_500x500.m');  % Use this parameter file
+% run('../usr/par_Sudbury_R_500x500.m');  % Use this parameter file
 
 
 % % Adjust these parameters if you're not happy with end pixelated images
@@ -39,10 +43,10 @@ drawnow;            % Make it display immediately.
 
 
 %% Crop the image to whatever size you want
-width     = width(img);     % get width of original image in pixels
-height    = height(img);    % get height of original image in pixels
+width_T     = width(img);     % get width of original image in pixels
+height_T    = height(img);    % get height of original image in pixels
 
-imgCrp    = imcrop(img, [width*x_crp, height*y_crp, width*w_crp, height*h_crp]);  % Crop function to select only part of the image defined by rectangle with [xmin ymin width height] REMEMBER: Origin is in top left for MatLab reasons
+imgCrp    = imcrop(img, [width_T*x_crp, height_T*y_crp, width_T*w_crp, height_T*h_crp]);  % Crop function to select only part of the image defined by rectangle with [xmin ymin width height] REMEMBER: Origin is in top left for MatLab reasons
 
 subplot(3, 4, 2);   % Where to plot the cropped image
 imshow(imgCrp);     % Show the image
@@ -67,7 +71,7 @@ for i = 1:nUnits_T
     % % Split image into different components
     mask = unitLabels == i;             % make a mask for pixels where unitLabels created above match i unit
     imgClstr = imgCrp.*uint8(mask);    % CAN'T REMEMBER WHAT THIS DOES - groups together all pixels from one cluster/segment maybe?
-    imgTitle = ['Cluster' num2str(i)]  % Make a title for the image that tells you which cluster it is
+    imgTitle = ['Cluster' num2str(i)];  % Make a title for the image that tells you which cluster it is
 
     subplot(3, 4, 4);   % Where to plot the segmented image 
     imshow(imgClstr);   % Show the image
@@ -132,7 +136,7 @@ for i = 1:nUnits_T
 end
 
 %% Replacing overlapping pixels
-for l = 1:nUnits_T-1
+for l = 1:nUnits_T-1;
     [m,n] = size(c{l});
      for i = 1:m;
         for j = 1:n;
@@ -140,7 +144,7 @@ for l = 1:nUnits_T-1
             
                 if c{l}(i, j) == 1 && (c{l+p}(i, j) == 1);
                     msg = ["replaced" num2str(i) num2str(j)];
-                    disp(msg);
+%                     disp(msg)
                     c{l+p}(i,j) = 0;
                 end
             end
@@ -173,75 +177,155 @@ filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_TCluste
 saveas(f1, filename)   ;      % Save figure of all clusters
 
 
-%% Break so you can assign values to clusters
-msg4 = ['Assign temperatures to clusters in ImgPrep_Temperature.m; then type dbcont in command window '];
-disp(msg4)
-keyboard    
+%% Assign temperatures to each array 
+numRows = nUnits_T;
+numCols = 1;
 
-%% Assign temperatures to each array (need to do this by person brain at the moment, may be a smarter way)
-%% Lonar
-% T_array = [];T
+% File to store last values
+memoryFile = 'last_temperature_inputs.mat';
 
-T_array{1} = 50*c{1};
-T_array{2} = 225*c{3};
-T_array{3} = T_wat*c{2};
-T_array{4} = 25*c{4};
-T_array{5} = 300*c{5};
+% Load previous defaults if available (robust to different saved variable names)
+if isfile(memoryFile)
+    varsInFile = who('-file', memoryFile);            % list variables saved in the mat
+    if ismember('defaultData', varsInFile)
+        tmp = load(memoryFile, 'defaultData');
+        defaultData = tmp.defaultData;
+    elseif ismember('userInput', varsInFile)         % backward compatibility
+        tmp = load(memoryFile, 'userInput');
+        defaultData = tmp.userInput;
+    else
+        defaultData = repmat({''}, numRows, 1);
+    end
+    % Ensure correct size if number of units changed
+    if numel(defaultData) ~= numRows
+        % If there are fewer stored defaults, pad with blanks; if more, trim
+        if numel(defaultData) < numRows
+            defaultData = [defaultData; repmat({''}, numRows - numel(defaultData), 1)];
+        else
+            defaultData = defaultData(1:numRows);
+        end
+    end
+else
+    defaultData = repmat({''}, numRows, 1);
+end
 
-T_array{6}  = 130*c{6};
-T_array{7}  = 80*c{7};
-T_array{8}  = 375*c{8};
-% T_array{9}  = 700*c{9};
+% Prepare prompts
+prompts = cell(numRows, 1);
+for r = 1:numRows
+    prompts{r} = sprintf('Enter Cluster %d temperature in degrees Celsius:', r);
+end
+
+% Show the input dialog box with remembered defaults
+userInput = inputdlg(prompts, 'Enter Data', [1 100], defaultData);
+
+% If user canceled the dialog, exit gracefully
+if isempty(userInput)
+    disp('User canceled input.');
+    return;
+end
+
+% Save current inputs for next run (save under 'defaultData' for consistency)
+defaultData = userInput;   % store as defaultData for next time
+save(memoryFile, 'defaultData');
+
+% Parse input into unitData (numRows x numCols cell array)
+unitData = cell(numRows, numCols);
+for r = 1:numRows
+    parts = strsplit(strtrim(userInput{r}), {' ', ','});
+    if numel(parts) ~= numCols
+        error('Row %d does not contain %d elements.', r, numCols);
+    end
+    unitData(r, :) = parts;
+end
 
 
-T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8};
+% Create variables in base, display results, compute T_array
+T_array = cell(1, numRows);
+
+for r = 1:numRows
+    % Convert to numeric
+    T_val = str2double(unitData{r});
+    if isnan(T_val)
+        error('Invalid numeric input at row %d.', r);
+    end
+    
+    % Assign actual numeric value into base workspace variable T_val_r
+    assignin('base', sprintf('T_val_%d', r), T_val);
+    
+    % Print to command window (nice formatting)
+    fprintf('T_val_%d = %g\n', r, T_val);
+    
+    % Compute T_array element (assumes c{r} exists and is compatible)
+    T_array{r} = T_val * c{r};
+end
+
+% Sum arrays together
+T_array2 = 0;
+for i = 1:numRows
+    T_array2 = T_array2 + T_array{i};
+end
 
 
 
-%% Boltysh
-% T_array = [];T
-% 
-% T_array{1} = 450*c{1};
-% T_array{2} = 250*c{2};
-% T_array{3} = 30*c{3};
-% T_array{4} = 350*c{4};
-% T_array{5} = Twat*c{5};
-% 
-% T_array{6}  = 120*c{6};
-% T_array{7}  = 150*c{7};
-% T_array{8}  = 550*c{8};
-% T_array{9}  = 900*c{9};
-% T_array{10}  = 1200*c{10};
-% 
-% 
-% T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9} + T_array{10};
+% Display the result and confirm satisfaction with the temperature map
+happy = false;   % flag for user satisfaction
 
+while ~happy
+    % Compute and display the summed temperature array
+    T_array2 = 0;
+    for i = 1:numRows
+        T_array2 = T_array2 + T_array{i};
+    end
 
-% T_array{1} = 50*c{1};
-% T_array{2} = 100*c{4};
-% T_array{3} = 150*c{10};
-% T_array{4} = 200*c{2};
-% T_array{5} = 250*c{15};
-% 
-% T_array{6}  = 300*c{7};
-% T_array{7}  = 350*c{11};
-% T_array{8}  = 400*c{9};
-% T_array{9}  = 450*c{14};
-% T_array{10} = 500*c{8};
-% 
-% T_array{11}  = 550*c{12};
-% T_array{12}  = 600*c{5};
-% T_array{13}  = 650*c{13};
-% T_array{14}  = 700*c{6};
-% T_array{15}  = 750*c{17};
-% 
-% T_array{16}  = 800*c{16};
-% T_array{17}  = Twat*c{3};
-% 
-% T_array2 = T_array{1} + T_array{2} + T_array{3} + T_array{4} + T_array{5} + T_array{6} + T_array{7} + T_array{8} + T_array{9} + T_array{10} + T_array{11} + T_array{12} + T_array{13} + T_array{14} + T_array{15} + T_array{16} + T_array{17};
+    figure();
+    imagesc(T_array2);
+    colorbar;
+    title('Summed Temperature Array');
+    axis equal tight;
+    drawnow;
 
-%% Save array of temperatures
+    % Ask user if they are happy
+    choice = questdlg('Are you happy with this temperature distribution?', ...
+                      'Confirm Temperature Map', ...
+                      'Yes, save and continue', 'No, re-enter temperatures', 'Cancel', ...
+                      'Yes, save and continue');
 
+    switch choice
+        case 'Yes, save and continue'
+            happy = true;  % exit loop and save
+        case 'No, re-enter temperatures'
+            % Re-run the input dialog for new temperatures
+            userInput = inputdlg(prompts, 'Re-enter Temperatures', [1 100], defaultData);
+
+            % If user cancels during re-entry, exit gracefully
+            if isempty(userInput)
+                disp('User canceled input.');
+                return;
+            end
+
+            % Save new defaults
+            defaultData = userInput;
+            save(memoryFile, 'defaultData');
+
+            % Recalculate T_array based on new inputs
+            for r = 1:numRows
+                T_val = str2double(userInput{r});
+                if isnan(T_val)
+                    error('Invalid numeric input at row %d.', r);
+                end
+                assignin('base', sprintf('T_val_%d', r), T_val);
+                fprintf('T_val_%d = %g\n', r, T_val);
+                T_array{r} = T_val * c{r};
+            end
+
+        case 'Cancel'
+            disp('User canceled process.');
+            return;
+    end
+end
+
+% === Save temperature array once user is satisfied ===
 filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_TArray.mat'];    % Specify filename
-save([filename],'T_array2')
+save(filename, 'T_array2');
+fprintf('Temperature array saved to %s\n', filename);
 

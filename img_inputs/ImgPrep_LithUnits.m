@@ -4,17 +4,16 @@
 % % Save nUnits binary images where units are True and all other space is False
 
 
-
 %% Initial space set up
 clc;	% Clear command window.
-clear;	% Delete all variables.
+% clear;	% Delete all variables.
 close all;	% Close all figure windows except those created by imtool.
 imtool close all;	% Close all figure windows created by imtool.
 workspace;	% Make sure the workspace panel is showing.
 
 
 %% User inputs/options
-run('../usr/par_Lonar_R_500x500.m');  % Use this parameter file
+% run('../usr/par_Sudbury_R_500x500.m');  % Use this parameter file
 
 % % Adjust these parameters if you're not happy with end pixelated images
 % (watching each step plot on the first figure can tell you where you have problems (might be over/undersmoothing things)
@@ -27,6 +26,8 @@ projectName = runID % Specify project name so files will saved with some info
 foldername  = [outdir_ImgPrep projectName '_' num2str(Nx) 'x' num2str(Nz)];    % Specify foldername for output
 mkdir (sprintf(foldername));    % Make the specified directory
 
+foldername2 = fullfile(foldername, 'LithClusters');    % Specify foldername for output
+mkdir (sprintf(foldername2));    % Make the specified directory
 
 %% Make a figure to plot each step of the processing process
 f2        = figure;                           % Make a figure for plotting each step of the process
@@ -43,10 +44,10 @@ drawnow;            % Make it display immediately.
 
 
 %% Crop the image to whatever size you want
-width     = width(img);     % get width of original image in pixels
-height    = height(img);    % get height of original image in pixels
+width_Lith     = width(img);     % get width of original image in pixels
+height_Lith    = height(img);    % get height of original image in pixels
 
-imgCrp    = imcrop(img, [width*x_crp, height*y_crp, width*w_crp, height*h_crp]);  % Crop function to select only part of the image defined by rectangle with [xmin ymin width height] REMEMBER: Origin is in top left for MatLab reasons
+imgCrp    = imcrop(img, [width_Lith*x_crp, height_Lith*y_crp, width_Lith*w_crp, height_Lith*h_crp]);  % Crop function to select only part of the image defined by rectangle with [xmin ymin width height] REMEMBER: Origin is in top left for MatLab reasons
 
 subplot(3, 4, 2);   % Where to plot the cropped image
 imshow(imgCrp);     % Show the image
@@ -71,7 +72,7 @@ for i = 1:nUnits_Lith
     % % Split image into different components
     mask = unitLabels == i;             % make a mask for pixels where unitLabels created above match i unit
     imgClstr = imgCrp.*uint8(mask);    % CAN'T REMEMBER WHAT THIS DOES - groups together all pixels from one cluster/segment maybe?
-    imgTitle = ['Cluster_' num2str(i)]  % Make a title for the image that tells you which cluster it is
+    imgTitle = ['Cluster_' num2str(i)];  % Make a title for the image that tells you which cluster it is
 
     subplot(3, 4, 4);   % Where to plot the segmented image 
     imshow(imgClstr);   % Show the image
@@ -136,15 +137,15 @@ for i = 1:nUnits_Lith
 end
 
 %% Replacing overlapping pixels
-for l = 1:nUnits_Lith-1
+for l = 1:nUnits_Lith-1;
     [m,n] = size(c{l});
      for i = 1:m
         for j = 1:n
             for p = 1:nUnits_Lith-l
             
                 if c{l}(i, j) == 1 && (c{l+p}(i, j) == 1)
-                    msg = ["replaced" num2str(i) num2str(j)]
-                    disp(msg)
+                    msg = ["replaced" num2str(i) num2str(j)];
+%                     disp(msg)
                     c{l+p}(i,j) = 0;
                 end
             end
@@ -156,7 +157,7 @@ end
 %% Save images
 for l = 1:nUnits_Lith
     imgTitle = ['Lith_' num2str(l)];  % Make a title for the image that tells you which cluster it is
-    filename = [foldername '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
+    filename = [foldername2 '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
     imwrite(c{l}, filename);
     msg1 = ['Saved_' imgTitle '.png'];
     disp(msg1)
@@ -169,6 +170,12 @@ for l = 1:nUnits_Lith
 %     disp(msg2)
 end
 
+imgTitle = ['Original'];  % Make a title for the image
+filename = [foldername2 '/' projectName '_' num2str(Nx) 'x' num2str(Nz) '_' imgTitle '.png'];    % Specify filename
+imwrite(imgCrp, filename);
+msg1 = ['Saved_' imgTitle '.png'];
+disp(msg1)
+
 
 %% Plot each unit/cluster on a new figure
 f1 = figure;    % Make a figure for plotting all of the final units
@@ -178,7 +185,7 @@ col = ceil((nUnits_Lith+1)/3);
 
 figure(f1);         % Select Figure 1 to plot each cluster on one figure
 subplot(3,col,1);     % Plot cropped original image to the first position on Figure 1
-imshow(img)
+imshow(imgCrp)
 title("Original RGB");  % Title image
 drawnow
 

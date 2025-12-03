@@ -78,10 +78,6 @@ if exist('wat','var')
     f (wat==1) = 0.5;
     T (wat==1) = T_wat;
     C (wat==1) = C_wat;
-    wat_surf   = diff(wat,1)>0;
-    wat_base   = diff(wat,1)<0;
-    [jbed, ibed] = find(diff(wat(icz,icx))<0);
-    sub2ind     = sub2ind(size(wat),jbed,ibed);
 else
     wat = zeros(Nz,Nx);
 end
