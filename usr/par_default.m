@@ -71,12 +71,12 @@ Nt      = 1e5;       % max number of time step
 dt      = 1e3;       % initial time step
 
 % set numerical solver parameters
-CFL     = 1.0;       % Courant-Friedrich-Lewy number to limit time step size
+CFL     = 0.5;       % Courant-Friedrich-Lewy number to limit time step size
 ADVN    = 'weno5';   % advection scheme
 nup     = 50;        % update TC-solution and check residuals every nup iter
-tol     = 1e-8;      % residual tolerance for iterative solver
+tol     = 1e-7;      % residual tolerance for iterative solver
 maxit   = 5e3;       % maximum number of iterations
 alpha   = 0.99;      % step size for P-iterations
 beta    = 0.97;      % damping parameter for P-iterations
 gamma   = 0.25;      % step size for TC-iterations
-delta   = 0.25;      % damping parameter for TC-iterations
+delta   = 0.00;      % damping parameter for TC-iterations
