@@ -20,7 +20,7 @@ D       = 1e3;      % phys. domain depth [m]
 k0      = 1e-10;
 finit   = 'layer';  % initial condition: 'linear' or 'layer'
 f0      = 0.20;     % top/background initial porosity [vol]
-f1      = f0;       % base porosity [vol]  
+f1      = 0.10;     % base porosity [vol]  
 df      = 0.0;      % perturbation amplitude [vol]
 
 Tinit   = 'layer';  % initial condition: 'linear' or 'layer'
@@ -38,9 +38,9 @@ C1      = Cbot;     % base concentration [wt]
 dC      = Cbot/100; % perturbation amplitude [wt]
 
 zlay    = 0.5;      % relative depth of layer boundary
-wlay    = 0.02;     % relative width of layer boundary
+wlay    = 0.01;      % relative width of layer boundary
 
-smth    = 5;        % smoothness of initial fields
+smth    = 1;        % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {'closed','periodic'};
@@ -52,13 +52,6 @@ BC_VP   = {'closed','periodic'};
 tend    = 1e11;      % model stopping time [s]
 Nt      = 1e4;       % max number of time step
 dt      = 1e9;       % initial time step
-
-itpar.cheb.alpha = 1.0;           % Chebychev first coefficient damping (0-1)
-itpar.cheb.beta  = 1/2;           % Chebychev second coefficient damping (0-1)
-itpar.cheb.gamma = 1/2;           % Chebychev third coefficient damping (0-1)
-itpar.anda.m     = 4;             % Anderson acceleration depth (2-5)
-itpar.anda.mix   = 0.5;           % Anderson acceleration mixing coefficient (0-1)
-itpar.anda.reg   = 0.1;           % Anderson acceleration regularisation coefficient (0-1)
 
 
 %*****  RUN NAKHLA MODEL  *************************************************

@@ -41,6 +41,22 @@ while time <= tend && step <= Nt || max(Ra(:))<100
     dCdto = dCdt;
     dVdto = dVdt;
 
+    % reset update history
+    specrad.T.est = specrad.T.mean + 0.*specrad.T.est;
+    specrad.C.est = specrad.C.mean + 0.*specrad.C.est;
+    specrad.V.est = specrad.V.mean + 0.*specrad.V.est;
+    specrad.p.est = specrad.p.mean + 0.*specrad.p.est;
+
+    GHST.T        = 0.*GHST.T;
+    GHST.C        = 0.*GHST.C;
+    GHST.V        = 0.*GHST.V;
+    GHST.p        = 0.*GHST.p;
+
+    FHST.T        = 0.*FHST.T;
+    FHST.C        = 0.*FHST.C;
+    FHST.V        = 0.*FHST.V;
+    FHST.p        = 0.*FHST.p;
+
     resnorm = 1e6;
     pi    = p;
     it    = 0;
@@ -61,25 +77,35 @@ while time <= tend && step <= Nt || max(Ra(:))<100
             eqlb_T = -(T_wat-T_air)./tau_eqlb.*wat;
 
             mq     = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
+            mlt    = mq>0.7;
             phsr_m = -(mq - mqo)/5/dt;
 
             dTdt   = advn_T + diff_T + eqlb_T - phsr_V*LHv - phsr_m*LHm;
 
             if bnchm; dTdt = dTdt + src_T_mms(:,:,step+1); end
 
+            if any(mlt(:))
+                dTdt_mlt = sum(mlt(:).*dTdt(:))./sum(mlt(:)+eps);
+            else
+                dTdt_mlt = 0;
+            end
             if wat_evolve
                 dTdt_wat = sum(wat(:).*dTdt(:))./sum(wat(:));
             else
                 dTdt_wat = 0;
             end
-            dTdt = (1-wat-air).*dTdt + wat.*dTdt_wat + air*0;
+
+            dTdt = (1-mlt-wat-air).*dTdt + mlt.*dTdt_mlt + wat.*dTdt_wat + air*0;
 
             res_T = (T-To)/dt - (dTdt + dTdto)/2;
 
-            [T,XHST.T,RHST.T,rho_est.T,rho_mean.T] = iterate(T,res_T*dt,rho_est.T,rho_mean.T,XHST.T,RHST.T,itpar,step*it);
+            [T,GHST.T,FHST.T,specrad.T] = iterate(T,res_T*dt,specrad.T,GHST.T,FHST.T,itpar,it/nup);
 
 
             % set water to evolving reservoir
+            if any(mlt(:))
+                T_mlt = mean(T(mlt==1),'all');
+            end
             if wat_evolve
                 T_wat = mean(T(wat==1),'all');
             end
@@ -95,20 +121,28 @@ while time <= tend && step <= Nt || max(Ra(:))<100
             
             if bnchm; dCdt = dCdt + src_C_mms(:,:,step+1); end
 
+            if any(mlt(:))
+                dCdt_mlt = sum(mlt(:).*dCdt(:))./sum(mlt(:)+eps);
+            else
+                dCdt_mlt = 0;
+            end
             if wat_evolve
                 dCdt_wat = sum(wat(:).*dCdt(:))./sum(wat(:));
             else
                 dCdt_wat = 0;
             end
-            dCdt = (1-wat-air).*dCdt + wat.*dCdt_wat + air*0;
+
+            dCdt = (1-mlt-wat-air).*dCdt + mlt.*dCdt_mlt+ wat.*dCdt_wat + air*0;
 
             res_C = (C-Co)/(dt+TINY) - (dCdt + dCdto)/2;
 
-            [C,XHST.C,RHST.C,rho_est.C,rho_mean.C] = iterate(C,res_C*dt,rho_est.C,rho_mean.C,XHST.C,RHST.C,itpar,step*it);
+            [C,GHST.C,FHST.C,specrad.C] = iterate(C,res_C*dt,specrad.C,GHST.C,FHST.C,itpar,it/nup);
 
             C = max(0,min(1,C));  % saveguard min/max bounds
 
-            % set water to evolving reservoir
+            if any(mlt(:))
+                C_mlt = mean(C(mlt==1),'all');
+            end
             if wat_evolve
                 C_wat = mean(C(wat==1),'all');
             end
@@ -128,16 +162,22 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
             if bnchm; dVdt = dVdt + src_V_mms(:,:,step+1); end
 
+            if any(mlt(:))
+                dVdt_mlt = sum(mlt(:).*dVdt(:))./sum(mlt(:)+eps);
+            else
+                dVdt_mlt = 0;
+            end
             if wat_evolve
                 dVdt_wat = sum(wat(:).*dVdt(:))./sum(wat(:));
             else
                 dVdt_wat = 0;
             end
-            dVdt = (1-wat-air).*dVdt + wat.*dVdt_wat + air*0;
+
+            dVdt = (1-mlt-wat-air).*dVdt + mlt.*dVdt_mlt + wat.*dVdt_wat + air*0;
 
             res_V = (V-Vo)/(dt+TINY) - (dVdt + dVdto)/2;
 
-            [V,XHST.V,RHST.V,rho_est.V,rho_mean.V] = iterate(V,res_V*dt,rho_est.V,rho_mean.V,XHST.V,RHST.V,itpar,step*it);
+            [V,GHST.V,FHST.V,specrad.V] = iterate(V,res_V*dt,specrad.V,GHST.V,FHST.V,itpar,it/nup);
 
             V = max(0,min(1,V));  % saveguard min/max bounds
  
@@ -187,8 +227,8 @@ while time <= tend && step <= Nt || max(Ra(:))<100
         res_p(air>=0.5) = 0;  % set air to zero
 
         % update pressure solution
-        [p(2:end-1,2:end-1),XHST.p,RHST.p,rho_est.p,rho_mean.p] = iterate(p(2:end-1,2:end-1),res_p*dt,rho_est.p,rho_mean.p,XHST.p,RHST.p,itpar,step*it);
-        
+        [p(2:end-1,2:end-1),GHST.p,FHST.p,specrad.p] = iterate(p(2:end-1,2:end-1),res_p.*dtau,specrad.p,GHST.p,FHST.p,itpar,it);
+
         % apply pressure boundary conditions
         if strcmp(BC_VP{1},'closed')
             p([1 end],:) = p([2 end-1],:) + [-1;1].*Drhoz([1 end],icx).*grav.*h;
@@ -211,7 +251,7 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
         if ~mod(it,nup)
             % get preconditioned residual norm to monitor convergence
-            resnorm = norm(RHST.p(:,end))./norm(p+eps);% ... 
+            resnorm = norm(FHST.p(:,end))./norm(p+eps);% ... 
                     % + norm(upd_T,2)./norm(T+1,2) ...
                     % + norm(upd_C,2)./norm(C+1,2) ...
                     % + norm(upd_V,2)./norm(V+1,2);
@@ -227,6 +267,10 @@ while time <= tend && step <= Nt || max(Ra(:))<100
 
     fprintf(1,'\n\n      mean water T = %2.4f [C] \n',T_wat);
     fprintf(1,'      mean water C = %2.4f [wt] \n',C_wat);
+    if any(mlt(:))
+    fprintf(1,'      mean magma T = %2.4f [C] \n',T_mlt);
+    fprintf(1,'      mean magma C = %2.4f [wt] \n',C_mlt);
+    end
 
     soltime = toc;  % record time to solution
     fprintf(1,'\n\n      time to solution = %1.3e [s] \n\n',soltime);

@@ -23,7 +23,7 @@ rhol0   = 1000;     % fluid density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
 kT      = 1e-6;     % thermal diffusivity [m2/s]
-kV      = 1e-10;    % vapour bubble diffusivity [m2/s]
+kV      = 1e-7;    % vapour bubble diffusivity [m2/s]
 aT      = 4e-4;     % thermal expansivity [1/K]
 aC      = -0.7;     % chemical expansivity [1/wt]
 aV      = 0.90;     % vapour-liquid density contrast [1/wt]
@@ -64,7 +64,7 @@ wat_evolve = false;             % evolve water as well-mixed reservoir; else kee
 tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
 unit       = nan;
 
-smth    = 10; % smoothness of initial fields
+smth    = 2; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'closed'};
@@ -81,9 +81,9 @@ dt      = 1e3;       % initial time step
 CFL     = 0.5;       % Courant-Friedrich-Lewy number to limit time step size
 ADVN    = 'weno5';   % advection scheme
 nup     = 50;        % update TC-solution and check residuals every nup iter
-tol     = 1e-7;      % residual tolerance for iterative solver
+tol     = 1e-8;      % residual tolerance for iterative solver
 maxit   = 5e3;       % maximum number of iterations
-alpha   = 0.99;      % step size for P-iterations
-beta    = 0.97;      % damping parameter for P-iterations
-gamma   = 0.25;      % step size for TC-iterations
-delta   = 0.00;      % damping parameter for TC-iterations
+itpar.fp.damp = 1.0;  % fixed-point iterative damping (0-1)
+itpar.aa.m    = 4;    % Anderson acceleration depth (2-7)
+itpar.aa.damp = 0.7;  % Anderson acceleration damping (0-1)
+itpar.aa.reg  = 1e-6; % Anderson acceleration regularisation (0-1)

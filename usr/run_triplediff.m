@@ -24,7 +24,7 @@ df      = 0.0;      % perturbation amplitude [vol]
 
 Tinit   = 'linear'; % initial condition: 'linear' or 'layer'
 Ttop    = 10;       % top boundary temperature
-Tbot    = 400;      % base boundary temperature
+Tbot    = 500;      % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
 dT      =-Tbot/50;  % perturbation amplitude [C]
@@ -45,7 +45,7 @@ BC_V    = {'closed','periodic'};
 BC_VP   = {'closed','periodic'};
 
 % set model timing parameters
-tend    = 1e11;      % model stopping time [s]
+tend    = 1e12;      % model stopping time [s]
 Nt      = 1e4;       % max number of time step
 dt      = 1e9;       % initial time step
 

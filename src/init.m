@@ -24,7 +24,7 @@ if bnchm; mms; else  % construct manufactured solution if running benchmark [AP:
 
 % initialise smooth random noise
 rng(15); 
-smth = smth*Nz^2*1e-4;
+smth = smth*(Nz/100)^2;
 rp   = randn(Nz,Nx);
 for i = 1:round(smth*2)
     rp = rp + diffus(rp,ones(size(rp))/8,1,[1,2],BC_VP);
@@ -55,9 +55,9 @@ end
 % update initial condition within structures
 if ~any(isnan(unit(:)))
     for i = 1:size(unit,3)
-        if ~isnan(fstruct(i)); f = f + unit(:,:,i).*fstruct(i); end
-        if ~isnan(Tstruct(i)); T = T + unit(:,:,i).*Tstruct(i); end
-        if ~isnan(Cstruct(i)); C = C + unit(:,:,i).*Cstruct(i); end
+        if ~isnan(funit(i)); f = f + unit(:,:,i).*funit(i); end
+        if ~isnan(Tunit(i)); T = T + unit(:,:,i).*Tunit(i); end
+        if ~isnan(Cunit(i)); C = C + unit(:,:,i).*Cunit(i); end
     end
 end
 
@@ -90,13 +90,23 @@ else
     air = zeros(Nz,Nx);
 end
 
+mq  = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
+mlt = mq>0.7;
+
+if any(mlt(:))
+    T_mlt = mean(T(mlt==1),'all');
+    C_mlt = mean(C(mlt==1),'all');
+    T = (1-mlt).*T + mlt.*T_mlt;
+    C = (1-mlt).*C + mlt.*C_mlt;
+end
+
 % smoothing applied to initial fields to avoid sharp contrasts
 for i=1:smth
-    f = f + diffus(f,ones(size(f))/8,1,[1,2],{'',''});
-    T = T + diffus(T,ones(size(T))/8,1,[1,2],{'',''});
-    C = C + diffus(C,ones(size(C))/8,1,[1,2],{'',''});
-    wat = wat + diffus(wat,ones(size(wat))/8,1,[1,2],{'',''});
-    air = air + diffus(air,ones(size(air))/8,1,[1,2],{'',''});
+    f = f + diffus(f,(1-air)/8,1,[1,2],{'',''});
+    T = T + diffus(T,(1-air)/8,1,[1,2],{'',''});
+    C = C + diffus(C,(1-air)/8,1,[1,2],{'',''});
+    % wat = wat + diffus(wat,ones(size(wat))/8,1,[1,2],{'',''});
+    % air = air + diffus(air,ones(size(air))/8,1,[1,2],{'',''});
 end
 
 % add smooth random perturbations
@@ -108,10 +118,12 @@ C = C + dC.*rp;
 f = max(1e-3,min(1-1e-3,f));
 
 % adjust boundary layers
-T = T + (Ttop-T).*exp(-max(0,  Z-h/2)/bnd_w);
-T = T + (Tbot-T).*exp(-max(0,D-Z-h/2)/bnd_w);
-C = C + (Ctop-C).*exp(-max(0,  Z-h/2)/bnd_w);
-C = C + (Cbot-C).*exp(-max(0,D-Z-h/2)/bnd_w);
+if bnd_w>eps
+    T = T + (Ttop-T).*exp(-max(0,  Z-h/2)/bnd_w);
+    T = T + (Tbot-T).*exp(-max(0,D-Z-h/2)/bnd_w);
+    C = C + (Ctop-C).*exp(-max(0,  Z-h/2)/bnd_w);
+    C = C + (Cbot-C).*exp(-max(0,D-Z-h/2)/bnd_w);
+end
 
 % adjustment for treatment of air and water
 f = (1-wat-air).*f + wat.*0.5   + air.*1.0  ;
@@ -129,9 +141,17 @@ V  = Vq;  Vtop = mean(V(1,:)); Vbot = mean(V(end,:));
 phsr_V = 0.*V;
 
 % initialise melt phase
-mq = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
-m  = mq;
-phsr_m = 0.*m;
+mq  = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
+mlt = mq>0.7;
+
+if any(mlt(:))
+    T_mlt = mean(T(mlt==1),'all');
+    C_mlt = mean(C(mlt==1),'all');
+    T = (1-mlt).*T + mlt.*T_mlt;
+    C = (1-mlt).*C + mlt.*C_mlt;
+    V = (1-mlt).*V + mlt.*1;
+end
+phsr_m = 0.*mq;
 
 end
 
@@ -185,14 +205,14 @@ u = zeros(Nz,Nx+1);     % horizontal Darcy speed
 p = zeros(Nz+2,Nx+2);   % pore fluid pressure
 res_p = zeros(Nz,Nx);  upd_p = res_p;  % residual and update for pressure equation
 
-rho_est.T = 0.9.*ones(Nz*Nx,1); rho_mean.T = 0.9;
-rho_est.C = 0.9.*ones(Nz*Nx,1); rho_mean.C = 0.9;
-rho_est.V = 0.9.*ones(Nz*Nx,1); rho_mean.V = 0.9;
-rho_est.p = 0.9.*ones(Nz*Nx,1); rho_mean.p = 0.9;
-XHST.T = zeros(Nz*Nx, itpar.anda.m+1);  RHST.T = zeros(Nz*Nx, itpar.anda.m+1);
-XHST.C = zeros(Nz*Nx, itpar.anda.m+1);  RHST.C = zeros(Nz*Nx, itpar.anda.m+1);
-XHST.V = zeros(Nz*Nx, itpar.anda.m+1);  RHST.V = zeros(Nz*Nx, itpar.anda.m+1);
-XHST.p = zeros(Nz*Nx, itpar.anda.m+1);  RHST.p = zeros(Nz*Nx, itpar.anda.m+1);
+specrad.T.est = 0.9.*ones(Nz*Nx,1); specrad.T.mean = 0.9;
+specrad.C.est = 0.9.*ones(Nz*Nx,1); specrad.C.mean = 0.9;
+specrad.V.est = 0.9.*ones(Nz*Nx,1); specrad.V.mean = 0.9;
+specrad.p.est = 0.9.*ones(Nz*Nx,1); specrad.p.mean = 0.9;
+GHST.T = zeros(Nz*Nx, itpar.aa.m+1);  FHST.T = zeros(Nz*Nx, itpar.aa.m+1);
+GHST.C = zeros(Nz*Nx, itpar.aa.m+1);  FHST.C = zeros(Nz*Nx, itpar.aa.m+1);
+GHST.V = zeros(Nz*Nx, itpar.aa.m+1);  FHST.V = zeros(Nz*Nx, itpar.aa.m+1);
+GHST.p = zeros(Nz*Nx, itpar.aa.m+1);  FHST.p = zeros(Nz*Nx, itpar.aa.m+1);
 
 % initialise timing parameters
 dTdt = 0.*T;  upd_T = 0.*T;

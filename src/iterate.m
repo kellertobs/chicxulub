@@ -1,83 +1,87 @@
-% Chebyshev-like fixed-point iterative update with Anderson acceleration
+% Fixed-point iterative update with Anderson acceleration
 
 % res      : preconditioned residual of governing equation
 % x        : current iterate
 % g        : fixed-point updated iterate
-% r        : current residual (fixed-point update) r = g - x
+% f        : current fixed-point update f = g - x
 % x_acc    : fully accelerated iterate
 % x_new    : new updated iterate with (some/no) acceleration applied
-% XHST     : history of (unaccelerated) previous iterates
-% RHST     : history of previous residuals
+% rho.est  : estimated spectral radius at each grid point
+% rho.mean : global mean of estimated spectral radius
+% FHST     : history of previous fixed-point updates
 % itpar... : iterative parameter structure 
-%      .cheb.alpha : damping for first Chebychev-like coefficient
-%      .cheb.beta  : damping for second Chebychev-like coefficient
-%      .cheb.gamma : damping for third Chebychev-like coefficient 
-%      .anda.m     : depth for Anderson acceleration
-%      .anda.mix   : mixing coefficient for Anderson acceleration
-%      .anda.reg   : regularisation coefficient for Anderson acceleration
-% count    : iter*step count to track history of run
+%      .fp.damp  : damping coefficient for fixed-point coefficients
+%      .aa.m     : depth for Anderson acceleration
+%      .aa.damp  : damping coefficient for Anderson acceleration
+%      .aa.reg   : regularisation coefficient for Anderson acceleration
+% count    : iteration count to track history of run
 
-function [x,XHST,RHST,rho_est,rho_mean] = iterate(x,res,rho_est,rho_mean,XHST,RHST,itpar,count)
+function [x,GHST,FHST,rho] = iterate(x,res,rho,GHST,FHST,itpar,count)
 
 % allocate arrays of correct shape
 alpha = 0.*x;
 beta  = 0.*x;
-gamma = 0.*x;
 x_new = 0.*x;
 x_acc = 0.*x;
-r     = 0.*x;
-g     = 0.*x;
+f     = 0.*x;
 
-% 1) Chebyshev-like fixed-point iterative update
 
-% Update per-DOF rho estimates from ratio of consecutive updates
-denom   = max(abs(RHST(:,end-1)), 1e-12);         % avoid blow-up
-ratio   = abs(RHST(:,end)) ./ denom;            % n×1
-rho_new = min(0.99, max(0.02, ratio));           % clamp to [0.02, 0.99]
+% 1) Inertial fixed-point iterative update
+
+% Per-DOF spectral radius rho estimates from ratio of consecutive updates
+if count>2
+    ratio   = abs(FHST(:,end))./abs(FHST(:,end-1) + eps);  % form ratio of two most recent updates
+    rho_new = min(0.9, max(0.1, ratio));                   % clamp values to desired range
+else
+    rho_new = rho.mean;
+end
 
 % Moving average for stability
-rho_est  = 0.7*rho_est  + 0.3*rho_new;           % moving average
-rho_mean = 0.9*rho_mean + 0.1*mean(rho_est);     % moving average
-rho_est  = max(rho_est, 0.7*rho_mean);           % avoid crazy outliers
-rho_est  = max(rho_est, 0.1);                    % global lower bound
+rho.est  = 0.7*rho.est  + 0.3*rho_new;           % moving average
+rho.mean = 0.9*rho.mean + 0.1*mean(rho.est);     % moving average
+rho.est  = max(rho.est, 0.5*rho.mean);           % avoid outliers
+rho.est  = max(rho.est, 0.3);                    % hard lower bound
 
-% Chebyshev-like coefficients
-alpha(:) =  4./(2 + rho_est).^2              .*itpar.cheb.alpha;
-beta (:) =  2.*(2 - rho_est) ./ (2 + rho_est).*itpar.cheb.beta;
-gamma(:) = -1./(2 + rho_est).^2              .*itpar.cheb.gamma;
+% Fixed-point update coefficients
+alpha(:) = 4./(2 + rho.est).^2;
+% beta (:) = alpha(:)./2;
 
-% New residual/update and fixed-point iterate
-r(:) = -alpha(:).*res(:) + beta(:).*RHST(:,end) + gamma(:).*RHST(:,end-1);   % n×1
-g    = x + r;
+% New fixed-point update and iterate
+f(:) = itpar.fp.damp*(-alpha(:).*res(:) + beta(:).*FHST(:,end));
+g    = x + f;
 
-% 3) Anderson acceleration (residual-based)
 
-% Shift histories and store current g, r
-XHST = [XHST(:,2:end) g(:)];
-RHST = [RHST(:,2:end) r(:)];
+% 2) Anderson acceleration (Walker & Ni, 2011)
 
-if (count>itpar.anda.m || ~count) && itpar.anda.mix>eps  % only if enough history and mix>0
+% Shift histories and store current g, f
+FHST = [FHST(:,2:end) f(:)];   % previous solution updates
+GHST = [GHST(:,2:end) g(:)];   % previous solution updates
 
-    % Differences of iterates and residuals
-    DX  = XHST(:,2:end) - XHST(:,1:end-1);   % n×m
-    DR  = RHST(:,2:end) - RHST(:,1:end-1);   % n×m
-    reg = itpar.anda.reg.*rms(DR.'*DR,'all');
+if count>2 && itpar.aa.damp>eps  % only if enough history and damp>0
 
-    % Solve min_gamma || f - DF * gamma + reg*I ||_2  (global regularised least squares)
-    gamma = (DR.'*DR + reg*eye(itpar.anda.m)) \ (DR.'*r(:));
+    n = max(0,itpar.aa.m-count+1);
 
-    % Standard Anderson Type-I update for fixed-point:
-    x_acc(:) = g(:) - DX * gamma;
+    % Take differences of updates and solutions
+    DF  = FHST(:,2+n:end) - FHST(:,1+n:end-1);   % history of fixed-point updates
+    DG  = GHST(:,2+n:end) - GHST(:,1+n:end-1);   % history of fixed-point iterates
+
+    % Solve min_delta || f - DF * delta + reg*I ||_2  (global regularised least squares)
+    reg   = itpar.aa.reg.*rms(DF.'*DF,'all');      % get scaled regularisation level
+    gamma = (DF.'*DF + reg*eye(itpar.aa.m-n)) \ (DF.'*f(:));  % solve least squares problem
+
+    % Anderson update for fixed-point:
+    x_acc(:) = g(:) - DG * gamma;
 
     % Damped Anderson step
-    x_new(:) = g(:) + itpar.anda.mix * (x_acc(:) - g(:));
+    x_new(:) = g(:) + itpar.aa.damp * (x_acc(:) - g(:));
 
 else
     % No acceleration applied
     x_new = g;
 end
 
-% Update the current iterate with the new fixed-point/accelerated value
+
+% 3) Update the current iterate with the new fixed-point/accelerated value
 x = x_new;
 
 end
