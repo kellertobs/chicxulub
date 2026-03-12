@@ -1,0 +1,6 @@
+UnitName,FileName,Porosity_f,Temperature_T,Salinity_C
+TargetRock,Generic_Simple_1x1km_HOT_500x500_Lith_1,0.001,NaN,0.003
+Sediment,Generic_Simple_1x1km_HOT_500x500_Lith_2,0.1,NaN,0.01
+Breccia,Generic_Simple_1x1km_HOT_500x500_Lith_3,0.01,NaN,0.01
+Water,Generic_Simple_1x1km_HOT_500x500_Lith_4,0.99,NaN,0.035
+Melt,Generic_Simple_1x1km_HOT_500x500_Lith_5,0.8,NaN,0.01

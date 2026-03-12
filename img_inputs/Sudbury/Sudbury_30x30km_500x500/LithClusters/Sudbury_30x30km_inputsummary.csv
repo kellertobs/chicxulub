@@ -1,0 +1,10 @@
+UnitName,FileName,Porosity_f,Temperature_T,Salinity_C
+Mantle,Sudbury_30x30km_500x500_Lith_1,0.1,NaN,0.01
+Archean Gneiss,Sudbury_30x30km_500x500_Lith_2,0.1,NaN,0.01
+Air,Sudbury_30x30km_500x500_Lith_3,0.1,NaN,0.05
+Onaping Breccia,Sudbury_30x30km_500x500_Lith_4,0.1,NaN,0.01
+Lower Crust (Fractured),Sudbury_30x30km_500x500_Lith_5,0.1,NaN,0.01
+Lower Crust,Sudbury_30x30km_500x500_Lith_6,0.1,NaN,0.01
+Impact Melt Complex,Sudbury_30x30km_500x500_Lith_7,0.1,NaN,0.02
+Archean Granite Greenstone,Sudbury_30x30km_500x500_Lith_8,0.1,NaN,0.01
+Mantle (Fractured),Sudbury_30x30km_500x500_Lith_9,0.1,NaN,0.01

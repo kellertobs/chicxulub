@@ -3,23 +3,23 @@ clear; close all; clc;
 par_default;
 
 % SET MODEL PARAMETERS
-runID   = 'Sudbury_R_'; % run identifier tag
+runID   = 'Generic_Simple_1x1km_HOT'; % run identifier tag
 nout    = 20;       % print output every 'nop' steps
 svout   = 1;        % save figures and data to file (1)
 
 % set domain parameters
 Nz      = 500;      % num. grid size in z-direction - INITIAL - this is the size of the input arrays
-Nx      = 500;      % num. grid size in z-direction - INITIAL - this is the size of the input arrays
+Nx      = 500;      % num. grid size in z-direction - INITIAL - this is the size of the input arrays 
 
-Nzi     = 100;      % num. grid size in z-direction - FINAL - This is the size you actually want to run at      % num. grid size in z-direction
-Nxi     = 100;      % num. grid size in z-direction - FINAL - This is the size you actually want to run at      % num. grid size in x-direction
+Nzi     = 200;      % num. grid size in z-direction - FINAL - This is the size you actually want to run at
+Nxi     = 200;      % num. grid size in x-direction - FINAL - This is the size you actually want to run at
 D       = 1e3;      % physical domain depth [m]
 
-indir   = '../img_inputs/Generic_Simple/Generic_Simple_1x1km_500x500/'; % input directory for arrays
+indir   = '../img_inputs/Generic_Simple/Generic_Simple_1x1km_HOT_500x500/'; % input directory for arrays
 outdir  = '../out'; % output directory 
 
 %% Make background temperature and porosity from an array (make array using ImgPrep_Temperature.m and ImgPrep_Porosity.m)
-TArr   = load([indir 'Generic_Simple_1x1km_500x500_TArray.mat']);
+TArr   = load([indir 'Generic_Simple_1x1km_HOT_500x500_TArray.mat']);
 TArray = TArr.T_array2;
 
 addpath ../src
