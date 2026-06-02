@@ -54,7 +54,7 @@ C1      = Cbot;     % base concentration [wt]
 dC      = 5.e-4;    % perturbation amplitude [wt]
 
 
-smth    = 5; % smoothness of initial fields
+smth    = 2; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {{'flux',[0,0.03]},'closed'};

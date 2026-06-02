@@ -55,7 +55,7 @@ dC      = 5.e-4;    % perturbation amplitude [wt]
 
 zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
-bnd_w   = 25;       % initial boundary layer thickness
+bnd_w   = 0;        % initial boundary layer thickness
 
 T_air      = 10;
 T_wat      = 10;

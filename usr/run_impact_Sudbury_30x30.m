@@ -11,8 +11,8 @@ svout   = 1;        % save figures and data to file (1)
 Nz      = 500;      % num. grid size in z-direction
 Nx      = 500;      % num. grid size in x-direction 
 
-Nzi     = 500;      % num. grid size in z-direction
-Nxi     = 500;      % num. grid size in x-direction
+Nzi     = 200;      % num. grid size in z-direction
+Nxi     = 200;      % num. grid size in x-direction
 D       = 30e3;      % physical domain depth [m]
 
 indir   = '../img_inputs/Sudbury/Sudbury_30x30km_500x500/'; % input directory for arrays
@@ -23,7 +23,7 @@ TArr   = load([indir 'Sudbury_30x30km_500x500_TArray.mat']);
 TArray = TArr.T_array2;
 
 addpath ../src
-for i = 1:300
+for i = 1:200
     TArray = TArray + diffus(TArray,ones(size(TArray))/8,1,[1,2],BC_VP);
 end
 
@@ -35,23 +35,23 @@ run('../src/lith_input')
 
 %% set initial condition parameters
 finit   = 'linear'; % initial condition: 'linear' or 'layer' or 'array'
-f0      = 0.10;     % top/background initial porosity [vol]
-f1      = 0.01;     % base porosity [vol]  
+f0      = 0.05;     % top/background initial porosity [vol]
+f1      = 0.005;     % base porosity [vol]  
 df      = 0.001;    % perturbation amplitude [vol]
 
 Tinit   = 'linear'; % initial condition: 'linear' or 'layer' or 'array'
 Ttop    = 0;        % top boundary temperature
-Tbot    = 30;       % base boundary temperature
+Tbot    = 0;       % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
-dT      = -1;       % perturbation amplitude [C]
+dT      = 0;       % perturbation amplitude [C]
 
 Cinit   = 'linear'; % initial condition: 'linear' or 'layer'
-Ctop    = 0.001;    % top boundary concentration [wt]
-Cbot    = 0.01;     % base boundary concentration [wt]
+Ctop    = 0.00;    % top boundary concentration [wt]
+Cbot    = 0.00;     % base boundary concentration [wt]
 C0      = Ctop;     % top/background concentration  [wt]
 C1      = Cbot;     % base concentration [wt]
-dC      = 5.e-4;    % perturbation amplitude [wt]
+dC      = 0.0;    % perturbation amplitude [wt]
 
 
 smth    = 5; % smoothness of initial fields
@@ -127,8 +127,8 @@ for j = 1:numLith
     targetRows = numel(Zi(:,1));
     targetCols = numel(Xi(1,:));
 
-    lith_j = imresize(lith_j, [targetRows, targetCols], 'bilinear');
-    lith_j = round(lith_j);  % optional rounding if binary/integer mask
+    lith_j = imresize(lith_j, [targetRows, targetCols], 'nearest');
+    % lith_j = round(lith_j);  % optional rounding if binary/integer mask
 
     % Add as new layer in 3D array
     if isempty(unit)

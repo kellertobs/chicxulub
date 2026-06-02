@@ -75,7 +75,7 @@ end
 % prepare treatment for water and air
 if exist('wat','var')
     rp(wat==1) = 0;
-    f (wat==1) = 0.5;
+    f (wat==1) = 0.5;%min(1,max(f(:))+0.1);
     T (wat==1) = T_wat;
     C (wat==1) = C_wat;
 else
@@ -83,7 +83,7 @@ else
 end
 if exist('air','var') 
     rp(air==1) = 0;
-    f (air==1) = 1.0;
+    f (air==1) = 1.0;%min(1,max(f(:))+0.2);
     T (air==1) = T_air;
     C (air==1) = 0;
 else
@@ -126,9 +126,9 @@ if bnd_w>eps
 end
 
 % adjustment for treatment of air and water
-f = (1-wat-air).*f + wat.*0.5   + air.*1.0  ;
-T = (1-wat-air).*T + wat.*T_wat + air.*T_air;
-C = (1-wat-air).*C + wat.*C_wat + air.*0.0  ;
+% f = (1-wat-air).*f + wat.*min(1,max(f(:))+0.1) + air.*min(1,max(f(:))+0.2);
+% T = (1-wat-air).*T + wat.*T_wat + air.*T_air;
+% C = (1-wat-air).*C + wat.*C_wat + air.*0.0  ;
 
 res_T = zeros(Nz,Nx);  % residual for temperature equation
 res_C = zeros(Nz,Nx);  % residual for salinity equation
