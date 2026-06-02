@@ -1,0 +1,7 @@
+UnitName,FileName,Porosity_f,Temperature_T,Salinity_C
+Water,Boltysh_2x5km_200x500_Lith_1,0.0001,NaN,0.01
+Brecciated Granite,Boltysh_2x5km_200x500_Lith_2,0.17,NaN,0.01
+Granite,Boltysh_2x5km_200x500_Lith_3,0.03,NaN,0.01
+Suevite,Boltysh_2x5km_200x500_Lith_4,0.15,NaN,0.01
+Melt,Boltysh_2x5km_200x500_Lith_5,0.15,NaN,0.01
+Lithic Breccia,Boltysh_2x5km_200x500_Lith_6,0.15,NaN,0.01
