@@ -26,7 +26,7 @@ if bnchm; mms; else  % construct manufactured solution if running benchmark [AP:
 rng(15); 
 smth = smth*(Nz/100)^2;
 rp   = randn(Nz,Nx);
-for i = 1:round(smth*2)
+for i = 1:round(smth*4)
     rp = rp + diffus(rp,ones(size(rp))/8,1,[1,2],BC_VP);
     rp = rp - mean(mean(rp));
 end
@@ -89,6 +89,10 @@ if exist('air','var')
 else
     air = zeros(Nz,Nx);
 end
+airw = ceil((air([1,1:end],:)  + air([1:end,end],:))./2);
+airu = ceil((air(:,[1,1:end])  + air(:,[1:end,end]))./2);
+watw = floor((wat([1,1:end],:) + wat([1:end,end],:))./2);
+watu = ceil((wat(:,[1,1:end])  + wat(:,[1:end,end]))./2);
 
 mq  = max(0,min(1,((T-Tsol)./(Tliq-Tsol)))).^pTm;
 mlt = mq>0.7;
@@ -100,13 +104,15 @@ if any(mlt(:))
     C = (1-mlt).*C + mlt.*C_mlt;
 end
 
-% smoothing applied to initial fields to avoid sharp contrasts
-for i=1:smth
-    f = f + diffus(f,(1-air)/8,1,[1,2],{'',''});
-    T = T + diffus(T,(1-air)/8,1,[1,2],{'',''});
-    C = C + diffus(C,(1-air)/8,1,[1,2],{'',''});
-    % wat = wat + diffus(wat,ones(size(wat))/8,1,[1,2],{'',''});
-    % air = air + diffus(air,ones(size(air))/8,1,[1,2],{'',''});
+% smoothing applied to initial fields to avoid sharp contrasts 
+if strcmp(solver,'pseudotransient')
+    for i=1:smth
+        f = f + diffus(f,(1-air)/8,1,[1,2],{'',''});
+        T = T + diffus(T,(1-air)/8,1,[1,2],{'',''});
+        C = C + diffus(C,(1-air)/8,1,[1,2],{'',''});
+        % wat = wat + diffus(wat,ones(size(wat))/8,1,[1,2],{'',''});
+        % air = air + diffus(air,ones(size(air))/8,1,[1,2],{'',''});
+    end
 end
 
 % add smooth random perturbations
@@ -125,17 +131,13 @@ if bnd_w>eps
     C = C + (Cbot-C).*exp(-max(0,D-Z-h/2)/bnd_w);
 end
 
-% adjustment for treatment of air and water
-% f = (1-wat-air).*f + wat.*min(1,max(f(:))+0.1) + air.*min(1,max(f(:))+0.2);
-% T = (1-wat-air).*T + wat.*T_wat + air.*T_air;
-% C = (1-wat-air).*C + wat.*C_wat + air.*0.0  ;
-
 res_T = zeros(Nz,Nx);  % residual for temperature equation
 res_C = zeros(Nz,Nx);  % residual for salinity equation
 res_V = zeros(Nz,Nx);  % residual for vapour equation
 
 % initialise vapour phase
-Plith = 2500.*grav.*Z;
+rhot  = air.*1.225 + wat.*1000 + (1-air-wat).*2500;
+Plith = 1e5+cumsum(rhot.*grav.*h);
 Vq = vapour(T,C,Plith);
 V  = Vq;  Vtop = mean(V(1,:)); Vbot = mean(V(end,:));
 phsr_V = 0.*V;
@@ -168,23 +170,33 @@ if wat_evolve
     V_wat = mean(V(wat>=1),'all');
 end
 
-% get permeability [m2]
-kB = k0 * f.^n;                                                            % Kozeny-Carman relation
-k  = 10.^(log10(kD) + (log10(kB)-log10(kD)) .* 1./(1+exp(-(BDT-T)./100))); % reduce permeability in ductile region
+% initialise velocity-pressure solution
+p = zeros(Nz+2,Nx+2);
+w = zeros(Nz+1,Nx  );
+u = zeros(Nz  , Nx+1);
 
-% get Darcy coefficient [m2/Pas]
-K  = k/mu;
-Kz = (K(icz(1:end-1),:)+K(icz(2:end),:))./2;
-Kx = (K(:,icx(1:end-1))+K(:,icx(2:end)))./2;
+% get mapping arrays
+NP = (Nz+2) * (Nx+2);
+MapP = reshape(1:NP,Nz+2,Nx+2);
 
-% get iterative step size for p-solution
-dtau = (h/2)^2./K;
+% prepare boundary treatment
+if strcmp(BC_VP{1},'closed')
+    topbot = -1;
+else
+    topbot =  1;
+end
 
-% update density difference
-rho   = rhol0.*(1 - aT.*T - aC.*C - aV.*V );
-Drho  = rho - mean(rho,2);
-Drhoz = (Drho(icz(1:end-1),:)+Drho(icz(2:end),:))./2;
-if bnchm; Drhoz = Drho_mms(:,:,step+1); end
+periodic = 0;
+if     strcmp(BC_VP{2},'closed')
+    sides = -1;
+elseif strcmp(BC_VP{2},'open')
+    sides =  1;
+else % periodic
+    sides = -1;
+    periodic = 1;
+end
+
+update;
 
 % get dimensionless numbers
 Pr0  = 1./geomean(K(:))./rhol0./kT;
@@ -238,7 +250,7 @@ axl = 1.75; axr = 0.90; %   Right and left; spacing of axis to page
 fh1 = figure(1); clf; colormap(ocean);
 fh = axb + 2*axh + 1*avs + axt;
 fw = axl + 2*axw + 1*ahs + axr;
-set(fh1,UN{:},'Position',[3 3 fw fh]);
+set(fh1,UN{:},'Position',[2 2 fw fh]);
 set(fh1,'PaperUnits','Centimeters','PaperPosition',[0 0 fw fh],'PaperSize',[fw fh]);
 set(fh1,'Color','w','InvertHardcopy','off');
 set(fh1,'Resize','off');
@@ -249,41 +261,25 @@ ax(4) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
 
 set(fh1, 'CurrentAxes', ax(1))
 imagesc(x,z,f); axis equal tight; box on; cb = colorbar; hold on
-if ~any(isnan(unit(:)))
-    for i = 1:size(unit,3)
-        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
-    end
-end
+plotcontours(x,z,unit,wat,air);
 clim([min(f(:)-eps),max(f(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(2))
 imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on
-if ~any(isnan(unit(:)))
-    for i = 1:size(unit,3)
-        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
-    end
-end
+plotcontours(x,z,unit,wat,air);
 clim([min(C(:)-eps),max(C(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(3))
 imagesc(x,z,T); axis equal tight;  box on; cb = colorbar; hold on
-if ~any(isnan(unit(:)))
-    for i = 1:size(unit,3)
-        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
-    end
-end
+plotcontours(x,z,unit,wat,air);
 clim([min(T(:)-eps),max(T(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(4))
 imagesc(x,z,V); axis equal tight; box on; cb = colorbar; hold on
-if ~any(isnan(unit(:)))
-    for i = 1:size(unit,3)
-        contour(x,z,unit(:,:,i),1,'w','LineWidth',0.5);
-    end
-end
+plotcontours(x,z,unit,wat,air);
 clim([min(V(:)-eps),max(V(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 drawnow

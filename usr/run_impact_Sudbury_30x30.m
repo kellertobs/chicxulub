@@ -165,10 +165,10 @@ fprintf('   Tunit: [%s]\n', num2str(Tunit));
 fprintf('   Cunit: [%s]\n', num2str(Cunit));
 
 %% Parameters for iterative solver
-tol     = 1e-7;      % residual tolerance for iterative solver
-alpha   = 1.25;      % step size for iterative solver
-beta    = 0.99;      % damping parameter for iterative solver
-maxit   = 5e3;       % maximum number of iterations
+solver  = 'direct';  % select solver algorithm ('direct' or 'pseudotransient')
+nup     = 1;         % update TC-solution and check residuals every nup iter
+tol     = 1e-5;      % residual tolerance for iterative solver
+maxit   = 10;        % maximum number of iterations
 
 %*****  RUN CHICXULUB MODEL  *************************************************
 run('../src/main')

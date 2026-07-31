@@ -30,21 +30,30 @@ f     = 0.*x;
 
 % Per-DOF spectral radius rho estimates from ratio of consecutive updates
 if count>2
-    ratio   = abs(FHST(:,end))./abs(FHST(:,end-1) + eps);  % form ratio of two most recent updates
-    rho_new = min(0.9, max(0.1, ratio));                   % clamp values to desired range
+    ratio   = abs(FHST(:,end))./abs(FHST(:,end-1) + 1e-12);  % form ratio of two most recent updates
+    rho_new = min(0.9, max(0.1, ratio));                     % clamp values to desired range
 else
     rho_new = rho.mean;
+    ratio   = 0.*rho_new + 1;
 end
 
+% % Moving average for stability
+% rho.est  = 0.7*rho.est  + 0.3*rho_new;           % moving average
+% rho.mean = 0.9*rho.mean + 0.1*mean(rho.est);     % moving average
+% rho.est  = max(rho.est, 0.5*rho.mean);           % avoid outliers
+% rho.est  = max(rho.est, 0.3);                    % hard lower bound
+% 
+% % Fixed-point update coefficients
+% alpha(:) = 4./(2 + rho.est).^2;
+% % beta (:) = alpha(:)./2;
+
 % Moving average for stability
-rho.est  = 0.7*rho.est  + 0.3*rho_new;           % moving average
-rho.mean = 0.9*rho.mean + 0.1*mean(rho.est);     % moving average
-rho.est  = max(rho.est, 0.5*rho.mean);           % avoid outliers
-rho.est  = max(rho.est, 0.3);                    % hard lower bound
+rho.est  = 0.7*rho.est  + 0.3*rho_new;                   % moving average
+rho.mean = 0.7*rho.mean + 0.3*geomean(rho_new(ratio>0)); % moving average
+rho.est  = (rho.est.^4 + (rho.mean/2).^4).^(1/4);        % avoid outliers
 
 % Fixed-point update coefficients
 alpha(:) = 4./(2 + rho.est).^2;
-% beta (:) = alpha(:)./2;
 
 % New fixed-point update and iterate
 f(:) = itpar.fp.damp*(-alpha(:).*res(:) + beta(:).*FHST(:,end));

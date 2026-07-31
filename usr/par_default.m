@@ -14,16 +14,18 @@ Nx      = 200;      % num. grid size
 D       = 1e3;      % phys. domain depth [m]
 
 % set physical parameters
-mu      = 1e-4;     % pore fluid viscosity (water) [Pa s]
-k0      = 1e-11;    % background permeability [m2]
+mul     = 1e-3;     % pore fluid viscosity (water) [Pa s]
+muv     = 1e-5;     % vapour viscosity [Pa s]
+k0      = 1e-10;    % background permeability [m2]
 n       = 3;        % permeability powerlaw [1]
 BDT     = 400;      % brittle-ductile transition Temperature [C]
 kD      = 1e-19;    % ductile permeability [m2]
-rhol0   = 1000;     % fluid density [kg/m3]
+rhol0   = 1000;     % fluid ref density [kg/m3]
+rhov0   = 100;      % vapour ref density [kg/m3]
 grav    = 9.81;     % gravity [m/s2]
 kC      = 1e-8;     % chemical diffusivity [m2/s]  
 kT      = 1e-6;     % thermal diffusivity [m2/s]
-kV      = 1e-7;    % vapour bubble diffusivity [m2/s]
+kV      = 1e-7;     % vapour bubble diffusivity [m2/s]
 aT      = 4e-4;     % thermal expansivity [1/K]
 aC      = -0.7;     % chemical expansivity [1/wt]
 aV      = 0.90;     % vapour-liquid density contrast [1/wt]
@@ -34,13 +36,13 @@ Tliq    = 1200;     % magma liquidus temperature [C]
 pTm     = 0.75;     % Temp-melt powerlaw coefficient
 
 % set initial condition parameters
-finit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
+finit   = 'array';  % initial condition: 'linear' or 'layer' or 'array'
 f0      = 0.10;     % top/background initial porosity [vol]
 f1      = 0.01;     % base porosity [vol]  
 df      = 0.001;    % perturbation amplitude [vol]
 
-Tinit   = 'array'; % initial condition: 'linear' or 'layer' or 'array'
-Ttop    = 0;       % top boundary temperature
+Tinit   = 'array';  % initial condition: 'linear' or 'layer' or 'array'
+Ttop    = 0;        % top boundary temperature
 Tbot    = 40;       % base boundary temperature
 T0      = 400;      % top/background initial temperature [C]
 T1      = 40;       % base initial temperature [C]
@@ -57,14 +59,14 @@ zlay    = 0.5;      % relative depth of layer boundary
 wlay    = 0.02;     % relative width of layer boundary
 bnd_w   = 0;        % initial boundary layer thickness
 
-T_air      = 10;
-T_wat      = 10;
-C_wat      = 0.035;
+T_air      = 10;    % atmospheric temperature [C]
+T_wat      = 10;    % water body temperature [C]
+C_wat      = 0.035; % water body salinity [wt]
 wat_evolve = false;             % evolve water as well-mixed reservoir; else keep T,C constant
 tau_eqlb   = 5*3600*24*365.25;  % water-air thermal equilibration time 
 unit       = nan;
 
-smth    = 2; % smoothness of initial fields
+smth    = 2;        % smoothness of initial random perturbations
 
 % set boundary conditions
 BC_T    = {[Ttop,Tbot],'closed'};
@@ -78,12 +80,18 @@ Nt      = 1e5;       % max number of time step
 dt      = 1e3;       % initial time step
 
 % set numerical solver parameters
-CFL     = 0.5;       % Courant-Friedrich-Lewy number to limit time step size
-ADVN    = 'weno5';   % advection scheme
-nup     = 50;        % update TC-solution and check residuals every nup iter
-tol     = 1e-8;      % residual tolerance for iterative solver
-maxit   = 5e3;       % maximum number of iterations
-itpar.fp.damp = 1.0;  % fixed-point iterative damping (0-1)
-itpar.aa.m    = 4;    % Anderson acceleration depth (2-7)
-itpar.aa.damp = 0.7;  % Anderson acceleration damping (0-1)
-itpar.aa.reg  = 1e-6; % Anderson acceleration regularisation (0-1)
+CFL     = 0.5;         % Courant-Friedrich-Lewy number to limit time step size
+Kintp   = 'geometric'; % Darcy mobility interpolation scheme ('arithmetic', 'geometric')
+ADVN    = 'weno5';     % advection scheme
+solver  = 'direct';    % select solver algorithm ('direct' or 'pseudotransient')
+nup     = 1;           % update TC-solution and check residuals every nup iter
+tol     = 1e-5;        % residual tolerance for iterative solver
+maxit   = 10;          % maximum number of iterations
+% solver  = 'pseudotransient'; % select solver algorithm ('direct' or 'pseudotransient')
+% nup     = 100;         % update TC-solution and check residuals every nup iter
+% tol     = 1e-7;        % residual tolerance for iterative solver
+% maxit   = 1e6;         % maximum number of iterations
+itpar.fp.damp = 0.90;   % fixed-point iterative damping (0-1)
+itpar.aa.m    = 10;      % Anderson acceleration depth (2-7)
+itpar.aa.damp = 0.90;   % Anderson acceleration damping (0-1)
+itpar.aa.reg  = 1e-12;  % Anderson acceleration regularisation (0-1)

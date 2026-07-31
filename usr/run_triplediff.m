@@ -12,7 +12,7 @@ svout   = 0;        % save figures and data to file (1)
 bnchm   = 0;        % run benchmark
 
 % set domain parameters
-Nz      = 200;      % num. grid size
+Nz      = 400;      % num. grid size
 Nx      = Nz;
 D       = 1e3;      % phys. domain depth [m]
 
@@ -45,9 +45,10 @@ BC_V    = {'closed','periodic'};
 BC_VP   = {'closed','periodic'};
 
 % set model timing parameters
-tend    = 1e12;      % model stopping time [s]
-Nt      = 1e4;       % max number of time step
-dt      = 1e9;       % initial time step
+solver  = 'direct';  % select solver algorithm ('direct' or 'pseudotransient')
+nup     = 1;         % update TC-solution and check residuals every nup iter
+tol     = 1e-5;      % residual tolerance for iterative solver
+maxit   = 10;        % maximum number of iterations
 
 
 %*****  RUN NAKHLA MODEL  *************************************************

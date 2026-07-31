@@ -11,8 +11,8 @@ svout   = 1;        % save figures and data to file (1)
 Nz      = 500;      % num. grid size in z-direction - INITIAL - this is the size of the input arrays
 Nx      = 500;      % num. grid size in z-direction - INITIAL - this is the size of the input arrays 
 
-Nzi     = 200;      % num. grid size in z-direction - FINAL - This is the size you actually want to run at
-Nxi     = 200;      % num. grid size in x-direction - FINAL - This is the size you actually want to run at
+Nzi     = 300;      % num. grid size in z-direction - FINAL - This is the size you actually want to run at
+Nxi     = 300;      % num. grid size in x-direction - FINAL - This is the size you actually want to run at
 D       = 1e3;      % physical domain depth [m]
 
 indir   = '../img_inputs/Generic_Simple/Generic_Simple_1x1km_HOT_500x500/'; % input directory for arrays
@@ -58,9 +58,9 @@ smth    = 2; % smoothness of initial fields
 
 % set boundary conditions
 BC_T    = {{'flux',[0,0.03]},'closed'};
-BC_C    = {'closed','closed'};
-BC_V    = {'closed','closed'};
-BC_VP   = {'closed','closed'};
+BC_C    = {'open','closed'};
+BC_V    = {'open','closed'};
+BC_VP   = {'open','closed'};
 
 % downsample image inputs
 ho = D./Nz;                       % grid spacing [m]
@@ -165,10 +165,10 @@ fprintf('   Tunit: [%s]\n', num2str(Tunit));
 fprintf('   Cunit: [%s]\n', num2str(Cunit));
 
 %% Parameters for iterative solver
-tol     = 1e-7;      % residual tolerance for iterative solver
-alpha   = 1.25;      % step size for iterative solver
-beta    = 0.99;      % damping parameter for iterative solver
-maxit   = 5e3;       % maximum number of iterations
+solver  = 'direct';  % select solver algorithm ('direct' or 'pseudotransient')
+nup     = 1;         % update TC-solution and check residuals every nup iter
+tol     = 1e-5;      % residual tolerance for iterative solver
+maxit   = 10;        % maximum number of iterations
 
 %*****  RUN CHICXULUB MODEL  *************************************************
 run('../src/main')
