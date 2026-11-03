@@ -174,6 +174,7 @@ end
 p = zeros(Nz+2,Nx+2);
 w = zeros(Nz+1,Nx  );
 u = zeros(Nz  , Nx+1);
+kd = zeros(Nz,Nx);
 
 % get mapping arrays
 NP = (Nz+2) * (Nx+2);
@@ -261,25 +262,25 @@ ax(4) = axes(UN{:},'position',[axl+1*axw+1*ahs axb+0*axh+0*avs axw axh]);
 
 set(fh1, 'CurrentAxes', ax(1))
 imagesc(x,z,f); axis equal tight; box on; cb = colorbar; hold on
-plotcontours(x,z,unit,wat,air);
+plotcontours(x,z,unit,mlt,wat,air);
 clim([min(f(:)-eps),max(f(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Porosity [vol]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(2))
 imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on
-plotcontours(x,z,unit,wat,air);
+plotcontours(x,z,unit,mlt,wat,air);
 clim([min(C(:)-eps),max(C(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Salinity [wt]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(3))
 imagesc(x,z,T); axis equal tight;  box on; cb = colorbar; hold on
-plotcontours(x,z,unit,wat,air);
+plotcontours(x,z,unit,mlt,wat,air);
 clim([min(T(:)-eps),max(T(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:});title('Initial Temperature [C]',TX{:},FS{:})
 
 set(fh1, 'CurrentAxes', ax(4))
 imagesc(x,z,V); axis equal tight; box on; cb = colorbar; hold on
-plotcontours(x,z,unit,wat,air);
+plotcontours(x,z,unit,mlt,wat,air);
 clim([min(V(:)-eps),max(V(:)+eps)])
 set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Initial Vapour [wt]',TX{:},FS{:})
 drawnow

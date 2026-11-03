@@ -33,26 +33,26 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(1))
     imagesc(x,z,-w.*3600); axis equal tight; box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(-w(:).*3600),max(-w(:).*3600)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation z-speed [m/hr]',TX{:},FS{:})
     ylabel('Depth [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(2))
     imagesc(x,z,u.*3600); axis equal tight;  box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(u(:).*3600),max(u(:).*3600)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Segregation x-speed [m/hr]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(3))
     imagesc(x,z,p(2:end-1,2:end-1)); axis equal tight;  box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(p(:)),max(p(:))])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Dynamic fluid pressure [Pa]',TX{:},FS{:})
 
     set(fh2, 'CurrentAxes', ax(4))
     imagesc(x,z,T); axis equal tight; box on; cb = colorbar; hold on
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(Tin(:)-eps),max(Tin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Temperature [$^\circ$C]',TX{:},FS{:})
     ylabel('Depth [m]',TX{:},FS{:});
@@ -60,14 +60,14 @@ if ~mod(step,nout)
 
     set(fh2, 'CurrentAxes', ax(5))
     imagesc(x,z,C); axis equal tight;  box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(Cin(:)-eps),max(Cin(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Salinity [wt]',TX{:},FS{:})
     xlabel('Distance [m]',TX{:},FS{:});
 
     set(fh2, 'CurrentAxes', ax(6))
     imagesc(x,z,V); axis equal tight;  box on; cb = colorbar; hold on
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
 
     clim([min(V(:)-eps),max(V(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Vapour [wt]',TX{:},FS{:})
@@ -95,20 +95,20 @@ if ~mod(step,nout)
 
     set(fh3, 'CurrentAxes', ax(1))
     imagesc(x,z,rho); axis equal tight; box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(rho(:)-eps),max(rho(:)+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Fluid density [kg/m$^3$]',TX{:},FS{:})
     ylabel('Depth [m]',TX{:},FS{:});
 
     set(fh3, 'CurrentAxes', ax(2))
     imagesc(x,z,log10(K)); axis equal tight;  box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(log10(K(:))-eps),max(log10(K(:))+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Darcy mobility [m$^2$/Pas]',TX{:},FS{:})
 
     set(fh3, 'CurrentAxes', ax(3))
     imagesc(x,z,log10(k)); axis equal tight; box on; cb = colorbar; hold on
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(log10(k(:))-eps),max(log10(k(:))+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Permeability [m$^2$]',TX{:},FS{:})
     ylabel('Depth [m]',TX{:},FS{:});
@@ -116,7 +116,7 @@ if ~mod(step,nout)
 
     set(fh3, 'CurrentAxes', ax(4))
     imagesc(x,z,log10(mu)); axis equal tight;  box on; cb = colorbar; hold on;
-    plotcontours(x,z,unit,wat,air);
+    plotcontours(x,z,unit,mlt,wat,air);
     clim([min(log10(mu(:))-eps),max(log10(mu(:))+eps)])
     set(cb,TL{:},TS{:}); set(gca,TL{:},TS{:}); title('Fluid Viscosity [Pas]',TX{:},FS{:})
     xlabel('Distance [m]',TX{:},FS{:});
