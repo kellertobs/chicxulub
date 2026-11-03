@@ -38,6 +38,8 @@ function [dff,qz,qx] = diffus(f, k, h, dim, BC)
 % collect information on the dimensions and BCs corresponding to (z,x)
 zdim = dim(1);  if iscell(BC{1}); zBC = BC{1}{1};  zBCval = BC{1}{2}; else; zBC = BC{1}; zBCval = []; end
 xdim = dim(2);  if iscell(BC{2}); xBC = BC{2}{1};  xBCval = BC{2}{2}; else; xBC = BC{2}; xBCval = []; end
+if ~ischar(zBC); zBCk = 'open'; else; zBCk = zBC; end
+if ~ischar(xBC); xBCk = 'open'; else; xBCk = xBC; end
 
 % cell-centered values
 fcc = f;
@@ -47,8 +49,8 @@ kcc = k;
 [fxm, fxp] = makestencil(f, h, xdim, xBC, xBCval);
 [fzm, fzp] = makestencil(f, h, zdim, zBC, zBCval);
 
-[kxm, kxp] = makestencil(k, h, xdim, xBC, xBCval);
-[kzm, kzp] = makestencil(k, h, zdim, zBC, zBCval);
+[kxm, kxp] = makestencil(k, h, xdim, xBCk, 0);
+[kzm, kzp] = makestencil(k, h, zdim, zBCk, 0);
 
 % get diffusive fluxes  q = - k grad(f)
 qxp = - (kxp + kcc)/2 .* (fxp - fcc)/h;
