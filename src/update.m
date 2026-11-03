@@ -1,7 +1,6 @@
 % update density difference
-rhol  = rhol0.*(1 - aT.*T - aC.*C);
-rhov  = rhov0.*(1 - aT.*T);
-rho   = (1-V).*rhol + V.*rhov;
+rho0  = (1-V).*rhol0 + V.*rhov0;
+rho   = rho0.*(1 - aT.*T - aC.*C);
 Drho  = rho - mean(rho,2);
 Drhoz = (Drho(icz(1:end-1),:)+Drho(icz(2:end),:))./2;
 if strcmp(BC_VP{1},'closed'); Drhoz([1 end],:) = 0; end
@@ -13,6 +12,13 @@ k  = 10.^(log10(kD) + (log10(kB)-log10(kD)) .* 1./(1+exp(-(BDT-T)./50)));  % red
 
 % update fluid viscosity
 mu = mul.^(1-V) .* muv.^V;
+
+% update pore velocity magnitude
+vel = sqrt(((w(1:end-1,:)+w(2:end,:))/2).^2 ...
+         + ((u(:,1:end-1)+u(:,2:end))/2).^2) ./ f;
+
+% update hydrodynamic dispersivity
+kd = vel.*ld .* (1-air-wat);
 
 % update Darcy coefficient
 K  = k./mu;
@@ -30,5 +36,5 @@ end
 dtau = (h/2)^2./K;
 
 % get physical time step
-dt = CFL * min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);
+dt = CFL * min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./max(kT+kd(:))]);
 if bnchm; dt = dt_mms; end

@@ -34,6 +34,8 @@ LHm     = 5.50e5/1.2e3; % temperature jump from latent heat of melting [C]
 Tsol    = 800;      % magma solidus temperature [C]
 Tliq    = 1200;     % magma liquidus temperature [C]
 pTm     = 0.75;     % Temp-melt powerlaw coefficient
+ld      = 1e-16;    % dispersivity length [m2]
+
 
 % set initial condition parameters
 finit   = 'array';  % initial condition: 'linear' or 'layer' or 'array'

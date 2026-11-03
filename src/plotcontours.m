@@ -1,4 +1,4 @@
-function plotcontours(x,z,unit,wat,air)
+function plotcontours(x,z,unit,mlt,wat,air)
 
 if ~any(isnan(unit(:)))
     for i = 1:size(unit,3)
@@ -6,6 +6,9 @@ if ~any(isnan(unit(:)))
     end
 end
 
+if any(mlt(:))
+    contour(x,z,mlt,1,'w-.' ,'LineWidth',0.5);
+end
 if any(wat(:))
     contour(x,z,wat,1,'w--','LineWidth',0.5);
 end

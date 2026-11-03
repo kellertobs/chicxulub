@@ -6,7 +6,7 @@ par_default;
 
 runID   = 'layer';  % run identifier tag
 outdir  = '../out'; % output directory 
-nout    = 10;       % print output every 'nout' steps
+nout    = 20;       % print output every 'nout' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
 svout   = 0;        % save figures and data to file (1)
 bnchm   = 0;        % run benchmark
@@ -17,7 +17,7 @@ Nx      = Nz;
 D       = 1e3;      % phys. domain depth [m]
 
 % set initial condition parameters
-k0      = 1e-10;
+k0      = 1e-9;
 finit   = 'layer';  % initial condition: 'linear' or 'layer'
 f0      = 0.20;     % top/background initial porosity [vol]
 f1      = 0.10;     % base porosity [vol]  

@@ -3,7 +3,7 @@ par_default;
     
 %% SET MODEL PARAMETERS
 
-runID   = 'magma_pstr';  % run identifier tag
+runID   = 'magma';  % run identifier tag
 outdir  = '../out'; % output directory 
 nout    = 50;       % print output every 'nout' steps
 lvplt   = 1;        % plot figures live (1) or in background (0)     
@@ -19,6 +19,7 @@ D       = 3e3;      % phys. domain depth [m]
 k0      = 2e-10;    % background permeability [m2]
 kD      = 1e-17;    % hot/ductile permeability [m2]
 BDT     = 500;      % brittle/ductile transition T [C]
+ld      = 1;        % dispersivity length [m2]
 
 % set initial condition parameters
 finit   = 'linear';  % initial condition: 'linear' or 'layer'
@@ -27,7 +28,7 @@ f1      = 0.05;     % base porosity [vol]
 df      = 0.001;    % perturbation amplitude [vol]
 
 Tinit   = 'linear';  % initial condition: 'linear' or 'layer'
-Ttop    = -85;       % top boundary temperature
+Ttop    = -25;       % top boundary temperature
 Tbot    = 400;      % base boundary temperature
 T0      = Ttop;     % top/background initial temperature [C]
 T1      = Tbot;     % base initial temperature [C]
@@ -50,7 +51,7 @@ unit    = zeros(Nz,Nx);
 unit(end-2*Nz/10:end-Nz/10+1,(Nx/10+1:end-Nx/10)) = 1;
 funit   = 0.05;
 Cunit   = 0.05;
-Tunit   = 800;
+Tunit   = 850;
 
 T_air   = 10;
 T_wat   = 10;

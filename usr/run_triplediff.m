@@ -12,9 +12,11 @@ svout   = 0;        % save figures and data to file (1)
 bnchm   = 0;        % run benchmark
 
 % set domain parameters
-Nz      = 400;      % num. grid size
+Nz      = 100;      % num. grid size
 Nx      = Nz;
 D       = 1e3;      % phys. domain depth [m]
+k0      = 1e-10;    % background permeability [m2]
+ld      = 1;        % dispersivity length [m2]
 
 % set initial condition parameters
 finit   = 'linear'; % initial condition: 'linear' or 'layer'

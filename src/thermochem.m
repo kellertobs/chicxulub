@@ -2,7 +2,7 @@
 
 advn_T = - advect(T,u,w,h,{ADVN,'vdf'},[1,2],BC_T);
 
-diff_T = diffus(T,kT,h,[1,2],BC_T);
+diff_T = diffus(T,kT+kd,h,[1,2],BC_T);
 
 eqlb_T = -(T_wat-T_air)./tau_eqlb.*wat;
 
@@ -45,7 +45,7 @@ end
 % calculate salinity advection
 advn_C = - advect(C,u,w,h,{ADVN,'vdf'},[1,2],BC_C);
 
-diff_C = diffus(C,kC,h,[1,2],BC_C);
+diff_C = diffus(C,kC+kd,h,[1,2],BC_C);
 
 dCdt   = advn_C + diff_C;
 
@@ -82,7 +82,7 @@ end
 % calculate vapour advection
 advn_V = - advect(V,u,w,h,{ADVN,'vdf'},[1,2],BC_V);
 
-diff_V = diffus(V,kV,h,[1,2],BC_V);
+diff_V = diffus(V,kV+kd,h,[1,2],BC_V);
 
 Vq = vapour(T,C,Plith);
 
